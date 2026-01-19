@@ -1,7 +1,67 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../components/Navbar";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/users/login/",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      // Login successful
+      console.log("Login successful:", response.data);
+
+      // Store the token
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Redirect to dashboard (or home for now)
+      navigate("/");
+    } catch (err) {
+      console.error("Login error:", err);
+      if (err.response?.data) {
+        const errorMessages = Object.entries(err.response.data)
+          .map(
+            ([key, value]) =>
+              `${Array.isArray(value) ? value.join(", ") : value}`,
+          )
+          .join(" ");
+        setError(errorMessages || "Invalid credentials");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-page">
       <Navbar />
@@ -24,6 +84,20 @@ const LoginPage = () => {
           >
             Welcome Back
           </h1>
+          {error && (
+            <div
+              style={{
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "0.5rem",
+                padding: "1rem",
+                marginBottom: "1.5rem",
+                color: "#FCA5A5",
+              }}
+            >
+              {error}
+            </div>
+          )}
           <div
             style={{
               background: "rgba(255, 255, 255, 0.05)",
@@ -33,7 +107,7 @@ const LoginPage = () => {
               padding: "2rem",
             }}
           >
-            <form>
+            <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
                   style={{
@@ -43,11 +117,15 @@ const LoginPage = () => {
                     fontWeight: "600",
                   }}
                 >
-                  Email
+                  Username
                 </label>
                 <input
-                  type="email"
-                  placeholder="your@email.com"
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="john_doe"
+                  required
                   style={{
                     width: "100%",
                     padding: "0.75rem",
@@ -72,7 +150,11 @@ const LoginPage = () => {
                 </label>
                 <input
                   type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="••••••••"
+                  required
                   style={{
                     width: "100%",
                     padding: "0.75rem",
@@ -86,21 +168,24 @@ const LoginPage = () => {
               </div>
               <button
                 type="submit"
+                disabled={loading}
                 style={{
                   width: "100%",
                   padding: "1rem",
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background: loading
+                    ? "#6b7280"
+                    : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   color: "white",
                   border: "none",
                   borderRadius: "0.5rem",
                   fontSize: "1.1rem",
                   fontWeight: "600",
-                  cursor: "pointer",
+                  cursor: loading ? "not-allowed" : "pointer",
                   marginBottom: "1rem",
+                  opacity: loading ? 0.7 : 1,
                 }}
               >
-                Sign In
+                {loading ? "Signing In..." : "Sign In"}
               </button>
               <p style={{ textAlign: "center", color: "#9ca3af" }}>
                 Don't have an account?{" "}
