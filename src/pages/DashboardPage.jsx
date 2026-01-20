@@ -140,12 +140,25 @@ function DashboardPage() {
           </div>
 
           <div
+            onClick={() => navigate("/chatbot")}
             style={{
               background: "rgba(255, 255, 255, 0.1)",
               backdropFilter: "blur(10px)",
               borderRadius: "1rem",
               padding: "1.5rem",
               boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+              cursor: "pointer",
+              transition: "all 0.3s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-5px)";
+              e.currentTarget.style.boxShadow =
+                "0 12px 40px 0 rgba(31, 38, 135, 0.5)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow =
+                "0 8px 32px 0 rgba(31, 38, 135, 0.37)";
             }}
           >
             <h3
@@ -156,10 +169,23 @@ function DashboardPage() {
                 marginBottom: "1rem",
               }}
             >
-              AI Insights
+              AI Financial Advisor 💬
             </h3>
-            <p style={{ color: "rgba(255, 255, 255, 0.7)" }}>
-              Get personalized financial advice...
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.7)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Get personalized financial advice from our AI assistant
+            </p>
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.5)",
+                fontSize: "0.875rem",
+              }}
+            >
+              Click to start chatting →
             </p>
           </div>
         </div>
