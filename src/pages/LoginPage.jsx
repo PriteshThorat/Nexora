@@ -38,12 +38,23 @@ const LoginPage = () => {
       // Login successful
       console.log("Login successful:", response.data);
 
-      // Store the token
+      // Store the token and user info
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("username", response.data.user.username);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Redirect to dashboard (or home for now)
-      navigate("/");
+      // Check if user has completed their financial profile
+      const hasFinancialProfile =
+        response.data.user.has_financial_profile || false;
+
+      if (!hasFinancialProfile) {
+        // First time login - redirect to financial profile
+        navigate("/financial-profile");
+      } else {
+        // Profile already complete - go to dashboard
+        localStorage.setItem("profileComplete", "true");
+        navigate("/dashboard");
+      }
     } catch (err) {
       console.error("Login error:", err);
       if (err.response?.data) {
@@ -110,6 +121,7 @@ const LoginPage = () => {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="username"
                   style={{
                     display: "block",
                     color: "white",
@@ -121,10 +133,12 @@ const LoginPage = () => {
                 </label>
                 <input
                   type="text"
+                  id="username"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                   placeholder="john_doe"
+                  autoComplete="username"
                   required
                   style={{
                     width: "100%",
@@ -139,6 +153,7 @@ const LoginPage = () => {
               </div>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="password"
                   style={{
                     display: "block",
                     color: "white",
@@ -150,10 +165,12 @@ const LoginPage = () => {
                 </label>
                 <input
                   type="password"
+                  id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
                   style={{
                     width: "100%",

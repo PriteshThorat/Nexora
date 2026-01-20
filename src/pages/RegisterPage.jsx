@@ -111,6 +111,7 @@ const RegisterPage = () => {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="register-username"
                   style={{
                     display: "block",
                     color: "white",
@@ -122,10 +123,12 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="text"
+                  id="register-username"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                   placeholder="john_doe"
+                  autoComplete="username"
                   required
                   style={{
                     width: "100%",
@@ -140,6 +143,7 @@ const RegisterPage = () => {
               </div>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="email"
                   style={{
                     display: "block",
                     color: "white",
@@ -151,10 +155,12 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="email"
+                  id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="john@example.com"
+                  autoComplete="email"
                   required
                   style={{
                     width: "100%",
@@ -177,6 +183,7 @@ const RegisterPage = () => {
               >
                 <div>
                   <label
+                    htmlFor="first_name"
                     style={{
                       display: "block",
                       color: "white",
@@ -188,10 +195,12 @@ const RegisterPage = () => {
                   </label>
                   <input
                     type="text"
+                    id="first_name"
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
                     placeholder="John"
+                    autoComplete="given-name"
                     required
                     style={{
                       width: "100%",
@@ -206,6 +215,7 @@ const RegisterPage = () => {
                 </div>
                 <div>
                   <label
+                    htmlFor="last_name"
                     style={{
                       display: "block",
                       color: "white",
@@ -217,10 +227,12 @@ const RegisterPage = () => {
                   </label>
                   <input
                     type="text"
+                    id="last_name"
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
                     placeholder="Doe"
+                    autoComplete="family-name"
                     required
                     style={{
                       width: "100%",
@@ -236,6 +248,7 @@ const RegisterPage = () => {
               </div>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="register-password"
                   style={{
                     display: "block",
                     color: "white",
@@ -247,10 +260,12 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="password"
+                  id="register-password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="SecurePass123"
+                  autoComplete="new-password"
                   required
                   style={{
                     width: "100%",
@@ -265,6 +280,7 @@ const RegisterPage = () => {
               </div>
               <div style={{ marginBottom: "1.5rem" }}>
                 <label
+                  htmlFor="password_confirm"
                   style={{
                     display: "block",
                     color: "white",
@@ -276,10 +292,12 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="password"
+                  id="password_confirm"
                   name="password_confirm"
                   value={formData.password_confirm}
                   onChange={handleChange}
                   placeholder="SecurePass123"
+                  autoComplete="new-password"
                   required
                   style={{
                     width: "100%",
