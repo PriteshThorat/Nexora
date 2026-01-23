@@ -31,20 +31,31 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section className="how-it-works">
-      <div className="how-it-works-container">
-        <h2 className="section-title">How It Works</h2>
-        <p className="section-description">
+    <section className="py-24 px-8 bg-gradient-hero">
+      <div className="max-w-7xl mx-auto text-center">
+        <h2 className="text-5xl font-extrabold text-white mb-4">
+          How It Works
+        </h2>
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
           Get started with FinanceAI in four simple steps
         </p>
 
-        <div className="steps-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-16">
           {steps.map((step, index) => (
-            <div key={index} className="step-card">
-              <div className="step-number">{step.number}</div>
-              <div className="step-icon">{step.icon}</div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-description">{step.description}</p>
+            <div
+              key={index}
+              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 relative transition-all hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(102,126,234,0.3)]"
+            >
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gradient-primary text-white w-12 h-12 rounded-full flex items-center justify-center font-extrabold text-xl">
+                {step.number}
+              </div>
+              <div className="text-5xl my-8">{step.icon}</div>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                {step.title}
+              </h3>
+              <p className="text-gray-300 leading-relaxed">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>

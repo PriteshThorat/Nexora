@@ -8,7 +8,6 @@ import RegisterPage from "./pages/RegisterPage";
 import FinancialProfilePage from "./pages/FinancialProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import ChatbotPage from "./pages/ChatbotPage";
-import "./App.css";
 
 function App() {
   return (

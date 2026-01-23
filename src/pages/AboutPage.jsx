@@ -3,48 +3,20 @@ import Footer from "../components/Footer";
 
 const AboutPage = () => {
   return (
-    <div className="about-page">
+    <div className="w-full overflow-x-hidden">
       <Navbar />
-      <section
-        style={{
-          padding: "8rem 2rem 6rem",
-          background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
-          minHeight: "60vh",
-        }}
-      >
-        <div
-          style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center" }}
-        >
-          <h1
-            style={{
-              fontSize: "3rem",
-              fontWeight: "800",
-              color: "white",
-              marginBottom: "2rem",
-            }}
-          >
+      <section className="py-32 px-8 bg-gradient-hero min-h-[60vh]">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-extrabold text-white mb-8">
             About FinanceAI
           </h1>
-          <p
-            style={{
-              fontSize: "1.25rem",
-              color: "#d1d5db",
-              lineHeight: "1.8",
-              marginBottom: "2rem",
-            }}
-          >
+          <p className="text-xl text-gray-300 leading-relaxed mb-8">
             FinanceAI is a cutting-edge platform that leverages artificial
             intelligence to revolutionize financial decision-making. Our suite
             of specialized AI agents provides real-time insights, predictions,
             and recommendations to help you make smarter financial choices.
           </p>
-          <p
-            style={{
-              fontSize: "1.25rem",
-              color: "#d1d5db",
-              lineHeight: "1.8",
-            }}
-          >
+          <p className="text-xl text-gray-300 leading-relaxed">
             Built with state-of-the-art machine learning algorithms and powered
             by comprehensive financial data, FinanceAI brings
             institutional-grade financial intelligence to everyone.

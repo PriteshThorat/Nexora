@@ -64,60 +64,24 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="register-page">
+    <div className="w-full overflow-x-hidden">
       <Navbar />
-      <section
-        style={{
-          padding: "8rem 2rem 6rem",
-          background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
-          minHeight: "100vh",
-        }}
-      >
-        <div style={{ maxWidth: "450px", margin: "0 auto" }}>
-          <h1
-            style={{
-              fontSize: "2.5rem",
-              fontWeight: "800",
-              color: "white",
-              marginBottom: "2rem",
-              textAlign: "center",
-            }}
-          >
+      <section className="py-32 px-8 bg-gradient-hero min-h-screen">
+        <div className="max-w-md mx-auto">
+          <h1 className="text-4xl font-extrabold text-white mb-8 text-center">
             Get Started
           </h1>
           {error && (
-            <div
-              style={{
-                background: "rgba(239, 68, 68, 0.1)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                borderRadius: "0.5rem",
-                padding: "1rem",
-                marginBottom: "1.5rem",
-                color: "#FCA5A5",
-              }}
-            >
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 text-red-300">
               {error}
             </div>
           )}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.05)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "1rem",
-              padding: "2rem",
-            }}
-          >
+          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8">
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "1.5rem" }}>
+              <div className="mb-6">
                 <label
                   htmlFor="register-username"
-                  style={{
-                    display: "block",
-                    color: "white",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                  }}
+                  className="block text-white mb-2 font-semibold"
                 >
                   Username *
                 </label>
@@ -130,26 +94,13 @@ const RegisterPage = () => {
                   placeholder="john_doe"
                   autoComplete="username"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: "white",
-                    fontSize: "1rem",
-                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div style={{ marginBottom: "1.5rem" }}>
+              <div className="mb-6">
                 <label
                   htmlFor="email"
-                  style={{
-                    display: "block",
-                    color: "white",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                  }}
+                  className="block text-white mb-2 font-semibold"
                 >
                   Email *
                 </label>
@@ -162,34 +113,14 @@ const RegisterPage = () => {
                   placeholder="john@example.com"
                   autoComplete="email"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: "white",
-                    fontSize: "1rem",
-                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "1rem",
-                  marginBottom: "1.5rem",
-                }}
-              >
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <label
                     htmlFor="first_name"
-                    style={{
-                      display: "block",
-                      color: "white",
-                      marginBottom: "0.5rem",
-                      fontWeight: "600",
-                    }}
+                    className="block text-white mb-2 font-semibold"
                   >
                     First Name *
                   </label>
@@ -202,26 +133,13 @@ const RegisterPage = () => {
                     placeholder="John"
                     autoComplete="given-name"
                     required
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "0.5rem",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      background: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      fontSize: "1rem",
-                    }}
+                    className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="last_name"
-                    style={{
-                      display: "block",
-                      color: "white",
-                      marginBottom: "0.5rem",
-                      fontWeight: "600",
-                    }}
+                    className="block text-white mb-2 font-semibold"
                   >
                     Last Name *
                   </label>
@@ -234,27 +152,14 @@ const RegisterPage = () => {
                     placeholder="Doe"
                     autoComplete="family-name"
                     required
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "0.5rem",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      background: "rgba(255, 255, 255, 0.1)",
-                      color: "white",
-                      fontSize: "1rem",
-                    }}
+                    className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
-              <div style={{ marginBottom: "1.5rem" }}>
+              <div className="mb-6">
                 <label
                   htmlFor="register-password"
-                  style={{
-                    display: "block",
-                    color: "white",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                  }}
+                  className="block text-white mb-2 font-semibold"
                 >
                   Password *
                 </label>
@@ -267,26 +172,13 @@ const RegisterPage = () => {
                   placeholder="SecurePass123"
                   autoComplete="new-password"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: "white",
-                    fontSize: "1rem",
-                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div style={{ marginBottom: "1.5rem" }}>
+              <div className="mb-6">
                 <label
                   htmlFor="password_confirm"
-                  style={{
-                    display: "block",
-                    color: "white",
-                    marginBottom: "0.5rem",
-                    fontWeight: "600",
-                  }}
+                  className="block text-white mb-2 font-semibold"
                 >
                   Confirm Password *
                 </label>
@@ -299,41 +191,22 @@ const RegisterPage = () => {
                   placeholder="SecurePass123"
                   autoComplete="new-password"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    color: "white",
-                    fontSize: "1rem",
-                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "1rem",
-                  background: loading
-                    ? "#6b7280"
-                    : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.5rem",
-                  fontSize: "1.1rem",
-                  fontWeight: "600",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  marginBottom: "1rem",
-                  opacity: loading ? 0.7 : 1,
-                }}
+                className="w-full py-4 bg-gradient-primary text-white border-none rounded-lg text-lg font-semibold cursor-pointer mb-4 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg transition-shadow"
               >
                 {loading ? "Creating Account..." : "Create Account"}
               </button>
-              <p style={{ textAlign: "center", color: "#9ca3af" }}>
+              <p className="text-center text-gray-400">
                 Already have an account?{" "}
-                <Link to="/login" style={{ color: "#667eea" }}>
+                <Link
+                  to="/login"
+                  className="text-primary-500 hover:text-primary-400"
+                >
                   Sign in
                 </Link>
               </p>
