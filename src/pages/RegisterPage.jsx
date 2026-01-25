@@ -65,11 +65,11 @@ const RegisterPage = () => {
 
   return (
     <div
-      className="flex min-h-screen bg-gray-50"
+      className="flex min-h-screen bg-gray-50 dark:bg-slate-900"
       style={{ fontFamily: "'Roboto Mono', monospace" }}
     >
       {/* Left Side - Register Form */}
-      <div className="flex-1 flex items-start justify-center p-8 pt-16 bg-white">
+      <div className="flex-1 flex items-start justify-center p-8 pt-16 bg-white dark:bg-slate-800">
         <div className="w-full max-w-md">
           {/* Logo & Header */}
           <div className="mb-12">
@@ -78,16 +78,16 @@ const RegisterPage = () => {
                 Nexora
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 text-center">
               Create Your Account
             </h1>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 dark:text-slate-300 text-center">
               Start your financial journey with Nexora today.
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-4 mb-8 border-b border-gray-200 justify-center">
+          <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-slate-600 justify-center">
             <button
               onClick={() => {
                 setActiveTab("signin");
@@ -128,12 +128,7 @@ const RegisterPage = () => {
           {/* Error Message */}
           {error && (
             <div
-              className="rounded-lg p-4 mb-6 text-sm leading-relaxed"
-              style={{
-                backgroundColor: "#FEF2F2",
-                border: "1px solid #FCA5A5",
-                color: "#991B1B",
-              }}
+              className="rounded-lg p-4 mb-6 text-sm leading-relaxed bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300"
             >
               {error}
             </div>
@@ -145,7 +140,7 @@ const RegisterPage = () => {
             <div>
               <label
                 htmlFor="register-username"
-                className="block text-sm font-semibold text-gray-900 mb-2"
+                className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
               >
                 Username <span className="text-red-500">*</span>
               </label>
@@ -177,7 +172,7 @@ const RegisterPage = () => {
                   placeholder="Enter your username"
                   autoComplete="username"
                   required
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -197,7 +192,7 @@ const RegisterPage = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-semibold text-gray-900 mb-2"
+                className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
               >
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -228,7 +223,7 @@ const RegisterPage = () => {
                   placeholder="Enter your email address"
                   autoComplete="email"
                   required
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -249,7 +244,7 @@ const RegisterPage = () => {
               <div>
                 <label
                   htmlFor="first_name"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
+                  className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
                 >
                   First Name <span className="text-red-500">*</span>
                 </label>
@@ -262,7 +257,7 @@ const RegisterPage = () => {
                   placeholder="Enter your first name"
                   autoComplete="given-name"
                   required
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full px-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -279,7 +274,7 @@ const RegisterPage = () => {
               <div>
                 <label
                   htmlFor="last_name"
-                  className="block text-sm font-semibold text-gray-900 mb-2"
+                  className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
                 >
                   Last Name <span className="text-red-500">*</span>
                 </label>
@@ -292,7 +287,7 @@ const RegisterPage = () => {
                   placeholder="Enter your last name"
                   autoComplete="family-name"
                   required
-                  className="w-full px-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full px-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -312,7 +307,7 @@ const RegisterPage = () => {
             <div>
               <label
                 htmlFor="register-password"
-                className="block text-sm font-semibold text-gray-900 mb-2"
+                className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
               >
                 Password <span className="text-red-500">*</span>
               </label>
@@ -343,7 +338,7 @@ const RegisterPage = () => {
                   placeholder="Create a strong password"
                   autoComplete="new-password"
                   required
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -363,7 +358,7 @@ const RegisterPage = () => {
             <div>
               <label
                 htmlFor="password_confirm"
-                className="block text-sm font-semibold text-gray-900 mb-2"
+                className="block text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2"
               >
                 Confirm Password <span className="text-red-500">*</span>
               </label>
@@ -394,7 +389,7 @@ const RegisterPage = () => {
                   placeholder="Re-enter your password"
                   autoComplete="new-password"
                   required
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400 text-base"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-transparent text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-base bg-white dark:bg-slate-700"
                   style={{
                     transition: "all 0.2s ease",
                   }}
@@ -440,8 +435,8 @@ const RegisterPage = () => {
           </form>
 
           {/* Footer */}
-          <div className="mt-10 pt-8 border-t border-gray-200">
-            <p className="text-center text-xs text-gray-500 leading-relaxed">
+          <div className="mt-10 pt-8 border-t border-gray-200 dark:border-slate-600">
+            <p className="text-center text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
               © 2026 Nexora. All rights reserved.{" "}
               <Link
                 to="/terms"

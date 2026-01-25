@@ -75,11 +75,11 @@ const LoginPage = () => {
 
   return (
     <div
-      className="flex min-h-screen bg-gray-50"
+      className="flex min-h-screen bg-gray-50 dark:bg-slate-900"
       style={{ fontFamily: "'Roboto Mono', monospace" }}
     >
       {/* Left Side - Login Form */}
-      <div className="flex-1 flex items-start justify-center p-8 pt-16 bg-white">
+      <div className="flex-1 flex items-start justify-center p-8 pt-16 bg-white dark:bg-slate-800">
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-12">
@@ -88,16 +88,16 @@ const LoginPage = () => {
                 Nexora
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 text-center">
               Welcome to Nexora
             </h1>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 dark:text-slate-300 text-center">
               Start your experience with Nexora by signing in or signing up.
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-4 mb-8 border-b border-gray-200 justify-center">
+          <div className="flex gap-4 mb-8 border-b border-gray-200 dark:border-slate-600 justify-center">
             <button
               onClick={() => setActiveTab("signin")}
               className="pb-3 px-1 font-medium transition-colors relative"
@@ -145,7 +145,7 @@ const LoginPage = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6 text-red-700 text-sm">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-6 text-red-700 dark:text-red-300 text-sm">
               {error}
             </div>
           )}
@@ -156,7 +156,7 @@ const LoginPage = () => {
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
               >
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -203,7 +203,7 @@ const LoginPage = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
               >
                 Password <span className="text-red-500">*</span>
               </label>
@@ -266,8 +266,8 @@ const LoginPage = () => {
           </form>
 
           {/* Footer */}
-          <div className="mt-10 pt-8 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-600">
+          <div className="mt-10 pt-8 border-t border-gray-200 dark:border-slate-600">
+            <p className="text-center text-sm text-gray-600 dark:text-slate-400">
               Copyright · Nexora. All Right Reserved{" "}
               <Link
                 to="/terms"
