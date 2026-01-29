@@ -1,10 +1,10 @@
-import Navbar from "../components/Navbar";
+import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 const ContactPage = () => {
   return (
     <div className="w-full overflow-x-hidden">
-      <Navbar />
+      <Header />
       <section className="py-32 px-8 bg-gradient-hero min-h-[60vh]">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-5xl font-extrabold text-white mb-8 text-center">
