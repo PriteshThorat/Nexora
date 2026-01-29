@@ -6,13 +6,20 @@ function ChatbotPage() {
   const [messages, setMessages] = useState([
     {
       type: "bot",
-      text: "Hello! I'm your AI Financial Advisor. How can I help you today?",
+      text: "Hello, How can I help you?",
       timestamp: new Date(),
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef(null);
+  const [chatHistory] = useState([
+    "Fitness plan with Trainer",
+    "Star or pin icon to mark new",
+    "Favorite horoscope readings",
+    "Random input clarification",
+  ]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,250 +129,340 @@ function ChatbotPage() {
 
   return (
     <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      }}
+      className="flex h-screen bg-gray-50 dark:bg-slate-900"
+      style={{ fontFamily: "'Roboto Mono', monospace" }}
     >
-      {/* Header */}
+      {/* Left Sidebar */}
       <div
-        style={{
-          background: "rgba(255, 255, 255, 0.1)",
-          backdropFilter: "blur(10px)",
-          padding: "1rem 2rem",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem",
-        }}
+        className={`${
+          sidebarOpen ? "w-64" : "w-0"
+        } transition-all duration-300 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden`}
       >
-        <button
-          onClick={handleBack}
-          style={{
-            background: "rgba(255, 255, 255, 0.2)",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
-            color: "white",
-            padding: "0.5rem 1rem",
-            borderRadius: "0.5rem",
-            cursor: "pointer",
-            fontSize: "0.9rem",
-            fontWeight: "600",
-          }}
-        >
-          ← Back
-        </button>
-        <div>
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "bold",
-              color: "white",
-              margin: 0,
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center gap-3 mb-6">
+            <span
+              className="text-xl font-bold dark:text-white"
+              style={{ color: "#667eea" }}
+            >
+              Nexora
+            </span>
+          </div>
+
+          {/* Search */}
+          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-[#6b7280] dark:text-[#94a3b8] text-left hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8.25 14.25C11.5637 14.25 14.25 11.5637 14.25 8.25C14.25 4.93629 11.5637 2.25 8.25 2.25C4.93629 2.25 2.25 4.93629 2.25 8.25C2.25 11.5637 4.93629 14.25 8.25 14.25Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M15.75 15.75L12.4875 12.4875"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Search
+          </button>
+
+          {/* New Chat Button */}
+          <button
+            onClick={() => {
+              setMessages([
+                {
+                  type: "bot",
+                  text: "Hello, How can I help you?",
+                  timestamp: new Date(),
+                },
+              ]);
             }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 mt-3 rounded-lg bg-gray-100 dark:bg-slate-700 text-[#1f2937] dark:text-[#f1f5f9] text-left hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
           >
-            AI Financial Advisor
-          </h1>
-          <p
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 3.75V14.25M3.75 9H14.25"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            New Chat
+          </button>
+        </div>
+
+        {/* Navigation Items */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {/* Chat History */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between px-2 mb-2">
+              <span className="text-xs font-semibold text-[#6b7280] dark:text-[#94a3b8] uppercase">
+                Chat History
+              </span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-[#6b7280] dark:text-[#94a3b8]"
+              >
+                <path
+                  d="M12 6L8 10L4 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className="space-y-1">
+              {chatHistory.map((item, index) => (
+                <button
+                  key={index}
+                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-[#6b7280] dark:text-[#94a3b8] text-left hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-sm"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 2L10 8L6 14"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span className="truncate">{item}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Back to Dashboard Button */}
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700">
+          <button
+            onClick={handleBack}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-colors"
             style={{
-              fontSize: "0.875rem",
-              color: "rgba(255, 255, 255, 0.7)",
-              margin: 0,
+              backgroundColor: "rgb(102, 126, 234)",
+              fontFamily: "'Roboto Mono', monospace",
+              color: "#ffffff",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Get personalized financial advice
-          </p>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.25 13.5L6.75 9L11.25 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Back to Dashboard
+          </button>
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "2rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-        }}
-      >
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            style={{
-              display: "flex",
-              justifyContent:
-                message.type === "user" ? "flex-end" : "flex-start",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: "70%",
-                padding: "1rem",
-                borderRadius: "1rem",
-                background:
-                  message.type === "user"
-                    ? "rgba(102, 126, 234, 0.8)"
-                    : "rgba(255, 255, 255, 0.9)",
-                color: message.type === "user" ? "white" : "#1f2937",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-              }}
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
             >
-              <p
-                style={{ margin: 0, lineHeight: "1.5", whiteSpace: "pre-wrap" }}
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-[#1f2937] dark:text-[#f1f5f9]"
               >
-                {formatMessage(message.text)}
-              </p>
-              <p
-                style={{
-                  margin: "0.5rem 0 0 0",
-                  fontSize: "0.75rem",
-                  opacity: 0.7,
-                }}
-              >
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
+                <path
+                  d="M3 12H21M3 6H21M3 18H21"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
-        ))}
-        {loading && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                padding: "1rem",
-                borderRadius: "1rem",
-                background: "rgba(255, 255, 255, 0.9)",
-                color: "#1f2937",
-              }}
-            >
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#667eea",
-                    animation: "bounce 1.4s infinite ease-in-out both",
-                    animationDelay: "-0.32s",
-                  }}
-                />
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#667eea",
-                    animation: "bounce 1.4s infinite ease-in-out both",
-                    animationDelay: "-0.16s",
-                  }}
-                />
-                <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#667eea",
-                    animation: "bounce 1.4s infinite ease-in-out both",
-                  }}
+        </div>
+
+        {/* Chat Messages Area */}
+        <div className="flex-1 overflow-y-auto p-6 bg-linear-to-b from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900">
+          {messages.length === 1 && (
+            <div className="flex flex-col items-center justify-center h-full">
+              {/* Mascot/Logo */}
+              <div className="mb-8">
+                <img
+                  src="/ChatBot Avatar.png"
+                  alt="Chatbot Avatar"
+                  className="w-32 h-32 mb-4"
                 />
               </div>
+              <h1 className="text-3xl font-bold text-[#1f2937] dark:text-[#f1f5f9] mb-2 text-center">
+                How can I help you today?
+              </h1>
+              <p className="text-[#6b7280] dark:text-[#94a3b8] text-center mb-8">
+                Ask me anything about your finances, investments, or budgeting
+              </p>
             </div>
+          )}
+
+          {messages.length > 1 && (
+            <div
+              className="max-w-3xl mx-auto space-y-6 p-6 rounded-xl"
+              style={{
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[70%] ${
+                      message.type === "user"
+                        ? "text-white"
+                        : "bg-white dark:bg-slate-700 text-[#1f2937] dark:text-[#f1f5f9] border border-gray-200 dark:border-slate-600"
+                    } rounded-2xl px-4 py-3 shadow-sm`}
+                    style={
+                      message.type === "user"
+                        ? { backgroundColor: "rgb(102, 126, 234)" }
+                        : {}
+                    }
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatMessage(message.text)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-3 justify-start">
+                  <div className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl px-4 py-3 shadow-sm">
+                    <div className="flex gap-1">
+                      <div
+                        className="w-2 h-2 rounded-full animate-bounce"
+                        style={{
+                          backgroundColor: "#667eea",
+                          animationDelay: "0s",
+                        }}
+                      />
+                      <div
+                        className="w-2 h-2 rounded-full animate-bounce"
+                        style={{
+                          backgroundColor: "#667eea",
+                          animationDelay: "0.2s",
+                        }}
+                      />
+                      <div
+                        className="w-2 h-2 rounded-full animate-bounce"
+                        style={{
+                          backgroundColor: "#667eea",
+                          animationDelay: "0.4s",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="max-w-3xl mx-auto">
+            <form
+              onSubmit={handleSendMessage}
+              className="flex items-center gap-3"
+            >
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Chat here..."
+                  disabled={loading}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-[#1f2937] dark:text-[#f1f5f9] placeholder-[#6b7280] dark:placeholder-[#94a3b8] focus:outline-none focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    transition: "all 0.2s ease",
+                  }}
+                  onFocus={(e) =>
+                    (e.currentTarget.style.outline = "2px solid #667eea")
+                  }
+                  onBlur={(e) => (e.currentTarget.style.outline = "none")}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !inputMessage.trim()}
+                className="p-3 rounded-lg text-white transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor:
+                    loading || !inputMessage.trim()
+                      ? "#9ca3af"
+                      : "rgb(102, 126, 234)",
+                }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M17.5 2.5L8.75 11.25M17.5 2.5L12.5 17.5L8.75 11.25M17.5 2.5L2.5 7.5L8.75 11.25"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </form>
           </div>
-        )}
-        <div ref={messagesEndRef} />
+        </div>
       </div>
-
-      {/* Input Area */}
-      <div
-        style={{
-          background: "rgba(255, 255, 255, 0.1)",
-          backdropFilter: "blur(10px)",
-          padding: "1.5rem 2rem",
-          borderTop: "1px solid rgba(255, 255, 255, 0.2)",
-        }}
-      >
-        <form
-          onSubmit={handleSendMessage}
-          style={{
-            display: "flex",
-            gap: "1rem",
-            maxWidth: "1200px",
-            margin: "0 auto",
-          }}
-        >
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Ask me anything about your finances..."
-            disabled={loading}
-            style={{
-              flex: 1,
-              padding: "1rem",
-              borderRadius: "0.75rem",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              background: "rgba(255, 255, 255, 0.9)",
-              color: "#1f2937",
-              fontSize: "1rem",
-              outline: "none",
-            }}
-          />
-          <button
-            type="submit"
-            disabled={loading || !inputMessage.trim()}
-            style={{
-              padding: "1rem 2rem",
-              background:
-                loading || !inputMessage.trim()
-                  ? "rgba(107, 114, 128, 0.5)"
-                  : "rgba(102, 126, 234, 0.9)",
-              color: "white",
-              border: "none",
-              borderRadius: "0.75rem",
-              fontSize: "1rem",
-              fontWeight: "600",
-              cursor:
-                loading || !inputMessage.trim() ? "not-allowed" : "pointer",
-              transition: "all 0.3s",
-            }}
-          >
-            {loading ? "Sending..." : "Send"}
-          </button>
-        </form>
-        <p
-          style={{
-            textAlign: "center",
-            color: "rgba(255, 255, 255, 0.6)",
-            fontSize: "0.875rem",
-            marginTop: "1rem",
-          }}
-        >
-          Tip: Ask about budgeting, investments, savings strategies, or debt
-          management
-        </p>
-      </div>
-
-      <style>
-        {`
-          @keyframes bounce {
-            0%, 80%, 100% {
-              transform: scale(0);
-            }
-            40% {
-              transform: scale(1);
-            }
-          }
-        `}
-      </style>
     </div>
   );
 }
