@@ -14,12 +14,9 @@ function ChatbotPage() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef(null);
-  const [chatHistory] = useState([
-    "Fitness plan with Trainer",
-    "Star or pin icon to mark new",
-    "Favorite horoscope readings",
-    "Random input clarification",
-  ]);
+  const [chatSessions, setChatSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,8 +31,36 @@ function ChatbotPage() {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
+    } else {
+      fetchChatSessions();
     }
   }, [navigate]);
+
+  const fetchChatSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:8000/api/agents/chat_sessions/?limit=10",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Chat sessions:", data);
+        setChatSessions(data.sessions || []);
+      }
+    } catch (error) {
+      console.error("Error fetching chat sessions:", error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -48,6 +73,7 @@ function ChatbotPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageText = inputMessage;
     setInputMessage("");
     setLoading(true);
 
@@ -62,7 +88,8 @@ function ChatbotPage() {
             Authorization: `Token ${token}`,
           },
           body: JSON.stringify({
-            query: inputMessage,
+            query: messageText,
+            session_id: currentSessionId,
           }),
         },
       );
@@ -70,6 +97,15 @@ function ChatbotPage() {
       if (response.ok) {
         const data = await response.json();
         console.log("Backend response:", data);
+
+        // Update current session ID if returned
+        if (data.session_id) {
+          setCurrentSessionId(data.session_id);
+          // Refresh chat sessions after first message to show new session
+          if (!currentSessionId) {
+            fetchChatSessions();
+          }
+        }
 
         // Extract the reply text from nested structure
         const botText =
@@ -114,16 +150,158 @@ function ChatbotPage() {
     navigate("/dashboard");
   };
 
-  // Function to format markdown bold text
-  const formatMessage = (text) => {
-    // Split by ** and alternate between normal and bold
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        // Remove the ** and make it bold
-        return <strong key={index}>{part.slice(2, -2)}</strong>;
+  const handleNewChat = () => {
+    setMessages([
+      {
+        type: "bot",
+        text: "Hello, How can I help you?",
+        timestamp: new Date(),
+      },
+    ]);
+    setCurrentSessionId(null);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return "Today";
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const loadChatHistory = async (sessionId) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:8000/api/agents/chat_history/?session_id=${sessionId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Chat history:", data);
+
+        // Convert API messages to component format
+        const formattedMessages = data.messages.map((msg) => ({
+          type: msg.role === "user" ? "user" : "bot",
+          text: msg.content,
+          timestamp: new Date(msg.timestamp),
+        }));
+
+        setMessages(formattedMessages);
+        setCurrentSessionId(sessionId);
       }
-      return <span key={index}>{part}</span>;
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSession = async (sessionId, e) => {
+    e.stopPropagation(); // Prevent loading the session when clicking delete
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:8000/api/agents/delete_session/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+          }),
+        },
+      );
+
+      if (response.ok) {
+        // If the deleted session was the current one, reset to new chat
+        if (currentSessionId === sessionId) {
+          handleNewChat();
+        }
+        // Refresh the sessions list
+        fetchChatSessions();
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
+  };
+
+  // Function to format markdown text
+  const formatMessage = (text) => {
+    // First, unescape dollar signs
+    let formattedText = text.replace(/\\\$/g, "$");
+
+    // Split by lines to handle each line separately
+    const lines = formattedText.split("\n");
+
+    return lines.map((line, lineIndex) => {
+      // Check if line is a bullet point (starts with * but not **)
+      const bulletMatch = line.match(/^(\s*)\*\s+(.*)$/);
+      const isBullet = bulletMatch && !line.trim().startsWith("**");
+      const isNumbered = /^\s*\d+\.\s/.test(line);
+
+      // Determine indentation level for nested bullets
+      const indentLevel = bulletMatch
+        ? Math.floor(bulletMatch[1].length / 4)
+        : 0;
+
+      // Get the content without the bullet marker
+      let content = isBullet ? bulletMatch[2] : line;
+
+      // Process bold text within the line
+      const parts = content.split(/(\*\*.*?\*\*)/g);
+      const processedParts = parts.map((part, index) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={index}>{part}</span>;
+      });
+
+      // Render based on line type
+      if (isBullet) {
+        return (
+          <div
+            key={lineIndex}
+            className={`flex gap-2 my-1`}
+            style={{ marginLeft: `${indentLevel * 1.5 + 1.5}rem` }}
+          >
+            <span className="shrink-0">•</span>
+            <span>{processedParts}</span>
+          </div>
+        );
+      } else if (isNumbered) {
+        return (
+          <div key={lineIndex} className="ml-6 my-1">
+            {processedParts}
+          </div>
+        );
+      } else if (line.trim() === "") {
+        return <div key={lineIndex} className="h-2" />;
+      } else {
+        return (
+          <div key={lineIndex} className="my-1">
+            {processedParts}
+          </div>
+        );
+      }
     });
   };
 
@@ -178,15 +356,7 @@ function ChatbotPage() {
 
           {/* New Chat Button */}
           <button
-            onClick={() => {
-              setMessages([
-                {
-                  type: "bot",
-                  text: "Hello, How can I help you?",
-                  timestamp: new Date(),
-                },
-              ]);
-            }}
+            onClick={handleNewChat}
             className="w-full flex items-center gap-3 px-4 py-2.5 mt-3 rounded-lg bg-gray-100 dark:bg-slate-700 text-[#1f2937] dark:text-[#f1f5f9] text-left hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
           >
             <svg
@@ -234,29 +404,66 @@ function ChatbotPage() {
               </svg>
             </div>
             <div className="space-y-1">
-              {chatHistory.map((item, index) => (
-                <button
-                  key={index}
-                  className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-[#6b7280] dark:text-[#94a3b8] text-left hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-sm"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+              {loadingSessions ? (
+                <div className="px-4 py-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">
+                  Loading...
+                </div>
+              ) : chatSessions.length === 0 ? (
+                <div className="px-4 py-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">
+                  No chat history yet
+                </div>
+              ) : (
+                chatSessions.map((session) => (
+                  <div
+                    key={session.session_id}
+                    className={`group relative w-full flex flex-col gap-1 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${
+                      currentSessionId === session.session_id
+                        ? "bg-gray-100 dark:bg-slate-700"
+                        : ""
+                    }`}
                   >
-                    <path
-                      d="M6 2L10 8L6 14"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="truncate">{item}</span>
-                </button>
-              ))}
+                    <button
+                      onClick={() => loadChatHistory(session.session_id)}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-center justify-between pr-6">
+                        <span className="text-sm font-medium text-[#1f2937] dark:text-[#f1f5f9] truncate">
+                          {session.first_message?.substring(0, 30) ||
+                            session.title}
+                        </span>
+                        <span className="text-xs text-[#6b7280] dark:text-[#94a3b8] shrink-0 ml-2">
+                          {formatDate(session.created_at)}
+                        </span>
+                      </div>
+                      <span className="text-xs text-[#6b7280] dark:text-[#94a3b8]">
+                        {session.message_count} messages
+                      </span>
+                    </button>
+                    <button
+                      onClick={(e) => deleteSession(session.session_id, e)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
+                      title="Delete session"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-[#6b7280] dark:text-[#94a3b8]"
+                      >
+                        <path
+                          d="M12 4L4 12M4 4L12 12"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -368,9 +575,9 @@ function ChatbotPage() {
                         : {}
                     }
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    <div className="text-sm leading-relaxed">
                       {formatMessage(message.text)}
-                    </p>
+                    </div>
                   </div>
                 </div>
               ))}
