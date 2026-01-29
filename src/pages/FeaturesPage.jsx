@@ -4,9 +4,9 @@ import Footer from "../components/Footer";
 
 const FeaturesPage = () => {
   return (
-    <div className="features-page">
+    <div className="w-full overflow-x-hidden">
       <Navbar />
-      <div style={{ paddingTop: "80px" }}>
+      <div className="pt-20">
         <Features />
       </div>
       <Footer />

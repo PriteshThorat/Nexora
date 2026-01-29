@@ -45,27 +45,41 @@ const Features = () => {
   ];
 
   return (
-    <section className="features">
-      <div className="features-container">
-        <div className="features-header">
-          <h2 className="section-title">Powerful AI Agents</h2>
-          <p className="section-description">
+    <section className="py-24 px-8 bg-gray-900">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-extrabold text-white mb-4">
+            Powerful AI Agents
+          </h2>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
             Six specialized AI agents working together to revolutionize your
             financial decision-making
           </p>
         </div>
 
-        <div className="features-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="feature-card"
-              style={{ "--card-color": feature.color }}
+              className="bg-linear-to-br from-gray-800 to-gray-900 border border-white/10 rounded-2xl p-8 transition-all hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] relative overflow-hidden group"
             >
-              <div className="feature-icon">{feature.icon}</div>
-              <h3 className="feature-title">{feature.title}</h3>
-              <p className="feature-description">{feature.description}</p>
-              <button className="feature-button">Learn More →</button>
+              <div
+                className="absolute top-0 left-0 right-0 h-1 transition-transform scale-x-0 group-hover:scale-x-100"
+                style={{ background: feature.color }}
+              ></div>
+              <div className="text-5xl mb-4">{feature.icon}</div>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                {feature.title}
+              </h3>
+              <p className="text-gray-400 leading-relaxed mb-6">
+                {feature.description}
+              </p>
+              <button
+                className="bg-transparent border-none font-semibold cursor-pointer text-base transition-transform hover:translate-x-1"
+                style={{ color: feature.color }}
+              >
+                Learn More →
+              </button>
             </div>
           ))}
         </div>
