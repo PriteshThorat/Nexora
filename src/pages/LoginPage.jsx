@@ -158,7 +158,7 @@ const LoginPage = () => {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
               >
-                Email Address <span className="text-red-500">*</span>
+                Username <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -170,7 +170,14 @@ const LoginPage = () => {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M2.5 6.66669L9.0755 11.0504C9.63533 11.4236 10.3647 11.4236 10.9245 11.0504L17.5 6.66669M4.16667 15.8334H15.8333C16.7538 15.8334 17.5 15.0872 17.5 14.1667V5.83335C17.5 4.91288 16.7538 4.16669 15.8333 4.16669H4.16667C3.24619 4.16669 2.5 4.91288 2.5 5.83335V14.1667C2.5 15.0872 3.24619 15.8334 4.16667 15.8334Z"
+                      d="M10 10C12.0711 10 13.75 8.32107 13.75 6.25C13.75 4.17893 12.0711 2.5 10 2.5C7.92893 2.5 6.25 4.17893 6.25 6.25C6.25 8.32107 7.92893 10 10 10Z"
+                      stroke="#9CA3AF"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M17.5 17.5C17.5 14.7386 14.1421 12.5 10 12.5C5.85786 12.5 2.5 14.7386 2.5 17.5"
                       stroke="#9CA3AF"
                       strokeWidth="1.5"
                       strokeLinecap="round"
@@ -184,7 +191,7 @@ const LoginPage = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="Enter your email address"
+                  placeholder="Enter your username"
                   autoComplete="username"
                   required
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-transparent text-gray-900 placeholder-gray-400"

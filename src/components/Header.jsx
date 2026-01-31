@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleDarkMode } from "../store/themeSlice";
+import axios from "axios";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const darkMode = useSelector((state) => state.theme.darkMode);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -18,8 +21,45 @@ const Header = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
   const handleToggleDarkMode = () => {
     dispatch(toggleDarkMode());
+  };
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      try {
+        // Call the backend logout endpoint
+        await axios.post(
+          "http://localhost:8000/api/users/logout/",
+          {},
+          {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          },
+        );
+      } catch (error) {
+        console.error("Logout error:", error);
+        // Continue with local logout even if API call fails
+      }
+    }
+
+    // Clear all user data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("profileComplete");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setIsMenuOpen(false);
+    navigate("/");
   };
 
   // Design system - consistent spacing and typography
@@ -65,6 +105,7 @@ const Header = () => {
           top: 0,
           zIndex: 1000,
           transition: "all 0.3s ease",
+          fontFamily: "'Roboto Mono', monospace",
         }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -295,45 +336,12 @@ const Header = () => {
                 )}
               </button>
 
-              <Link to="/login">
+              {isLoggedIn ? (
                 <button
+                  onClick={handleLogout}
                   style={{
                     padding: `${spacing.sm} ${spacing.md}`,
-                    backgroundColor: "transparent",
-                    border: "none",
-                    borderRadius: "0.5rem",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    fontSize: fontSize.sm,
-                    fontFamily: "'Roboto Mono', monospace",
-                    color: theme.text,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = darkMode
-                      ? "#334155"
-                      : "#f3f4f6";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.outline = "2px solid #667eea";
-                    e.currentTarget.style.outlineOffset = "2px";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.outline = "none";
-                  }}
-                  aria-label="Log in to your account"
-                >
-                  Log in
-                </button>
-              </Link>
-              <Link to="/register">
-                <button
-                  style={{
-                    padding: `${spacing.sm} ${spacing.md}`,
-                    backgroundColor: darkMode ? "#667eea" : "#000",
+                    backgroundColor: "#EF4444",
                     color: "white",
                     border: "none",
                     borderRadius: "0.5rem",
@@ -346,24 +354,96 @@ const Header = () => {
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-2px)";
                     e.currentTarget.style.boxShadow =
-                      "0 8px 16px rgba(102, 126, 234, 0.3)";
+                      "0 8px 16px rgba(239, 68, 68, 0.3)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.outline = "2px solid #818cf8";
+                    e.currentTarget.style.outline = "2px solid #f87171";
                     e.currentTarget.style.outlineOffset = "2px";
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.outline = "none";
                   }}
-                  aria-label="Sign up for free"
+                  aria-label="Log out"
                 >
-                  Sign up
+                  Log out
                 </button>
-              </Link>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <button
+                      style={{
+                        padding: `${spacing.sm} ${spacing.md}`,
+                        backgroundColor: "transparent",
+                        border: "none",
+                        borderRadius: "0.5rem",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: fontSize.sm,
+                        fontFamily: "'Roboto Mono', monospace",
+                        color: theme.text,
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = darkMode
+                          ? "#334155"
+                          : "#f3f4f6";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.outline = "2px solid #667eea";
+                        e.currentTarget.style.outlineOffset = "2px";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.outline = "none";
+                      }}
+                      aria-label="Log in to your account"
+                    >
+                      Log in
+                    </button>
+                  </Link>
+                  <Link to="/register">
+                    <button
+                      style={{
+                        padding: `${spacing.sm} ${spacing.md}`,
+                        backgroundColor: darkMode ? "#667eea" : "#000",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "0.5rem",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        fontSize: fontSize.sm,
+                        fontFamily: "'Roboto Mono', monospace",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 8px 16px rgba(102, 126, 234, 0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.outline = "2px solid #818cf8";
+                        e.currentTarget.style.outlineOffset = "2px";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.outline = "none";
+                      }}
+                      aria-label="Sign up for free"
+                    >
+                      Sign up
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </>
         )}
@@ -491,31 +571,13 @@ const Header = () => {
                 </svg>
               )}
             </button>
-            <Link to="/login" style={{ flex: 1 }}>
+            {isLoggedIn ? (
               <button
+                onClick={handleLogout}
                 style={{
-                  width: "100%",
+                  flex: 1,
                   padding: spacing.sm,
-                  backgroundColor: "transparent",
-                  border: "none",
-                  borderRadius: "0.5rem",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: fontSize.sm,
-                  fontFamily: "'Roboto Mono', monospace",
-                  color: theme.text,
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Log in
-              </button>
-            </Link>
-            <Link to="/register" style={{ flex: 1 }}>
-              <button
-                style={{
-                  width: "100%",
-                  padding: spacing.sm,
-                  backgroundColor: darkMode ? "#667eea" : "#000",
+                  backgroundColor: "#EF4444",
                   color: "white",
                   border: "none",
                   borderRadius: "0.5rem",
@@ -524,11 +586,51 @@ const Header = () => {
                   fontSize: fontSize.sm,
                   fontFamily: "'Roboto Mono', monospace",
                 }}
-                onClick={() => setIsMenuOpen(false)}
               >
-                Sign up
+                Log out
               </button>
-            </Link>
+            ) : (
+              <>
+                <Link to="/login" style={{ flex: 1 }}>
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: spacing.sm,
+                      backgroundColor: "transparent",
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: fontSize.sm,
+                      fontFamily: "'Roboto Mono', monospace",
+                      color: theme.text,
+                    }}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Log in
+                  </button>
+                </Link>
+                <Link to="/register" style={{ flex: 1 }}>
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: spacing.sm,
+                      backgroundColor: darkMode ? "#667eea" : "#000",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: fontSize.sm,
+                      fontFamily: "'Roboto Mono', monospace",
+                    }}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign up
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

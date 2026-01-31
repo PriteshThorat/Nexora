@@ -37,7 +37,7 @@ const HowItWorks = () => {
           How It Works
         </h2>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Get started with FinanceAI in four simple steps
+          Get started with Nexora in four simple steps
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-16">

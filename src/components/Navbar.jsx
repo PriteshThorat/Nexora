@@ -9,7 +9,7 @@ const Navbar = () => {
           className="flex items-center gap-2 no-underline text-2xl font-bold"
         >
           <span className="text-4xl">💰</span>
-          <span className="gradient-text">FinanceAI</span>
+          <span className="gradient-text">Nexora</span>
         </Link>
 
         <ul className="flex gap-8 list-none">
