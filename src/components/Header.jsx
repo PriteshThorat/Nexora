@@ -215,30 +215,32 @@ const Header = () => {
               >
                 Features
               </Link>
-              <Link
-                to="/dashboard"
-                style={{
-                  textDecoration: "none",
-                  color: theme.text,
-                  fontWeight: "500",
-                  fontSize: fontSize.sm,
-                  transition: "all 0.2s ease",
-                  padding: `${spacing.xs} ${spacing.sm}`,
-                  borderRadius: "0.5rem",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#667eea";
-                  e.currentTarget.style.backgroundColor = darkMode
-                    ? "#1e293b"
-                    : "#f3f4f6";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = theme.text;
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Dashboard
-              </Link>
+              {isLoggedIn && (
+                <Link
+                  to="/dashboard"
+                  style={{
+                    textDecoration: "none",
+                    color: theme.text,
+                    fontWeight: "500",
+                    fontSize: fontSize.sm,
+                    transition: "all 0.2s ease",
+                    padding: `${spacing.xs} ${spacing.sm}`,
+                    borderRadius: "0.5rem",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#667eea";
+                    e.currentTarget.style.backgroundColor = darkMode
+                      ? "#1e293b"
+                      : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = theme.text;
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  Dashboard
+                </Link>
+              )}
               <Link
                 to="/contact"
                 style={{
@@ -494,20 +496,22 @@ const Header = () => {
           >
             Features
           </Link>
-          <Link
-            to="/dashboard"
-            style={{
-              textDecoration: "none",
-              color: theme.text,
-              fontWeight: "500",
-              fontSize: fontSize.sm,
-              padding: spacing.sm,
-              borderRadius: "0.5rem",
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Dashboard
-          </Link>
+          {isLoggedIn && (
+            <Link
+              to="/dashboard"
+              style={{
+                textDecoration: "none",
+                color: theme.text,
+                fontWeight: "500",
+                fontSize: fontSize.sm,
+                padding: spacing.sm,
+                borderRadius: "0.5rem",
+              }}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
+          )}
           <Link
             to="/contact"
             style={{

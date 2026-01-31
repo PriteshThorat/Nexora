@@ -17,6 +17,7 @@ function ChatbotPage() {
   const [chatSessions, setChatSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -244,6 +245,14 @@ function ChatbotPage() {
     }
   };
 
+  // Filter chat sessions based on search query
+  const filteredSessions = chatSessions.filter((session) => {
+    if (!searchQuery.trim()) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const message = session.first_message || session.title || "";
+    return message.toLowerCase().includes(searchLower);
+  });
+
   // Function to format markdown text
   const formatMessage = (text) => {
     // First, unescape dollar signs
@@ -328,13 +337,21 @@ function ChatbotPage() {
           </div>
 
           {/* Search */}
-          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-[#6b7280] dark:text-[#94a3b8] text-left hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search chat history..."
+              className="w-full flex items-center gap-3 px-4 py-2.5 pl-10 rounded-lg bg-gray-100 dark:bg-slate-700 text-[#1f2937] dark:text-[#f1f5f9] placeholder-[#6b7280] dark:placeholder-[#94a3b8] text-left hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
             <svg
               width="18"
               height="18"
               viewBox="0 0 18 18"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7280] dark:text-[#94a3b8] pointer-events-none"
             >
               <path
                 d="M8.25 14.25C11.5637 14.25 14.25 11.5637 14.25 8.25C14.25 4.93629 11.5637 2.25 8.25 2.25C4.93629 2.25 2.25 4.93629 2.25 8.25C2.25 11.5637 4.93629 14.25 8.25 14.25Z"
@@ -351,8 +368,7 @@ function ChatbotPage() {
                 strokeLinejoin="round"
               />
             </svg>
-            Search
-          </button>
+          </div>
 
           {/* New Chat Button */}
           <button
@@ -408,12 +424,14 @@ function ChatbotPage() {
                 <div className="px-4 py-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">
                   Loading...
                 </div>
-              ) : chatSessions.length === 0 ? (
+              ) : filteredSessions.length === 0 ? (
                 <div className="px-4 py-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">
-                  No chat history yet
+                  {searchQuery.trim()
+                    ? "No matching chats found"
+                    : "No chat history yet"}
                 </div>
               ) : (
-                chatSessions.map((session) => (
+                filteredSessions.map((session) => (
                   <div
                     key={session.session_id}
                     className={`group relative w-full flex flex-col gap-1 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors ${
