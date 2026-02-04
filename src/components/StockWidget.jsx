@@ -5,12 +5,111 @@ import { Chart, registerables } from "chart.js";
 // Register Chart.js components
 Chart.register(...registerables);
 
-// EODHD API Configuration
-const EODHD_API_KEY = import.meta.env.VITE_EODHD_API_KEY;
-const EODHD_BASE_URL = "https://eodhd.com/api";
+// Alpha Vantage API Configuration - Multiple keys for rotation
+// Add your keys to .env as: VITE_ALPHA_VANTAGE_KEY_1, VITE_ALPHA_VANTAGE_KEY_2, etc.
+const API_KEYS = [
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_1,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_2,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_3,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_4,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_5,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_6,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_7,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_8,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_9,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_10,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_11,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_12,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_13,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_14,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_15,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_16,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_17,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_18,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_19,
+  import.meta.env.VITE_ALPHA_VANTAGE_KEY_20,
+].filter(Boolean); // Remove undefined keys
+
+const ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
+
+// API Key rotation management
+let currentKeyIndex = 0;
+const failedKeys = new Set(); // Track keys that hit rate limits
+
+const getNextApiKey = () => {
+  if (API_KEYS.length === 0) {
+    console.error("No Alpha Vantage API keys configured");
+    return null;
+  }
+
+  // Try to find a working key
+  const startIndex = currentKeyIndex;
+  do {
+    const key = API_KEYS[currentKeyIndex];
+    if (!failedKeys.has(currentKeyIndex)) {
+      return { key, index: currentKeyIndex };
+    }
+    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+  } while (currentKeyIndex !== startIndex);
+
+  // All keys failed, reset and try again
+  console.warn("All API keys exhausted, resetting...");
+  failedKeys.clear();
+  return { key: API_KEYS[currentKeyIndex], index: currentKeyIndex };
+};
+
+const markKeyAsFailed = (keyIndex) => {
+  failedKeys.add(keyIndex);
+  console.log(
+    `Key ${keyIndex + 1} marked as rate limited. ${failedKeys.size}/${API_KEYS.length} keys exhausted.`,
+  );
+  // Move to next key
+  currentKeyIndex = (keyIndex + 1) % API_KEYS.length;
+};
+
+// Reset failed keys after 5 minutes (when rate limits typically reset)
+setInterval(
+  () => {
+    if (failedKeys.size > 0) {
+      console.log("Resetting rate-limited API keys...");
+      failedKeys.clear();
+    }
+  },
+  5 * 60 * 1000,
+);
 
 // Stock symbols to track
 const STOCK_SYMBOLS = ["AAPL", "META", "AMZN"];
+
+// Rate limiting: Alpha Vantage free tier allows 1 req/second
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1200; // 1.2 seconds between requests
+
+const waitForRateLimit = async () => {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+  lastRequestTime = Date.now();
+};
+
+// Simple cache to reduce API calls (5 min TTL)
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCachedData = (key) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  return null;
+};
+
+const setCachedData = (key, data) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
 
 /**
  * StockCard Component - Displays individual stock information with mini chart
@@ -36,30 +135,70 @@ function StockCard({ symbol }) {
   };
 
   /**
-   * Fetch current stock quote
+   * Fetch current stock quote using Alpha Vantage GLOBAL_QUOTE with automatic key rotation
    */
   const fetchStockQuote = async () => {
     try {
-      const response = await fetch(
-        `${EODHD_BASE_URL}/real-time/${symbol}.US?api_token=${EODHD_API_KEY}&fmt=json`,
-      );
+      // Check cache first
+      const cacheKey = `quote_${symbol}`;
+      const cachedQuote = getCachedData(cacheKey);
+      if (cachedQuote) {
+        setStockData(cachedQuote);
+        return;
+      }
+
+      // Get next available API key
+      const apiKeyData = getNextApiKey();
+      if (!apiKeyData) {
+        throw new Error("No Alpha Vantage API keys configured");
+      }
+
+      // Wait for rate limit
+      await waitForRateLimit();
+
+      const url = `${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKeyData.key}`;
+      const response = await fetch(url);
 
       if (!response.ok) throw new Error("Failed to fetch stock quote");
 
       const data = await response.json();
 
-      if (data && data.code) {
-        // Transform EODHD response to match our expected format
+      // Check for rate limit or API limit messages
+      if (data["Note"] || data["Information"]) {
+        const message = data["Note"] || data["Information"];
+        console.warn(
+          `Alpha Vantage rate limit for ${symbol} (Key ${apiKeyData.index + 1}):`,
+          message,
+        );
+
+        // Mark this key as failed and try with next key
+        markKeyAsFailed(apiKeyData.index);
+
+        // Retry with next key
+        return await fetchStockQuote();
+      }
+
+      // Check for error message
+      if (data["Error Message"]) {
+        throw new Error(data["Error Message"]);
+      }
+
+      const quote = data["Global Quote"];
+      if (quote && Object.keys(quote).length > 0 && quote["01. symbol"]) {
+        // Normalize Alpha Vantage response
         const transformedData = {
-          symbol: data.code,
-          name: data.code, // EODHD doesn't return company name in this endpoint
-          price: data.close,
-          change: data.change,
-          changesPercentage: data.change_p,
+          symbol: quote["01. symbol"],
+          name: quote["01. symbol"],
+          price: parseFloat(quote["05. price"]),
+          change: parseFloat(quote["09. change"]),
+          changesPercentage: parseFloat(
+            quote["10. change percent"].replace("%", ""),
+          ),
         };
         setStockData(transformedData);
+        setCachedData(cacheKey, transformedData);
       } else {
-        throw new Error("No data received");
+        throw new Error("No valid data received from API");
       }
     } catch (err) {
       console.error(`Error fetching quote for ${symbol}:`, err);
@@ -68,26 +207,65 @@ function StockCard({ symbol }) {
   };
 
   /**
-   * Fetch intraday chart data (last 30 data points)
+   * Fetch daily historical data using Alpha Vantage TIME_SERIES_DAILY with automatic key rotation
+   * Gets last 7-10 trading days for sparkline
    */
   const fetchChartData = async () => {
     try {
-      // Get intraday data with 5-minute intervals
-      const response = await fetch(
-        `${EODHD_BASE_URL}/intraday/${symbol}.US?api_token=${EODHD_API_KEY}&interval=5m&fmt=json`,
-      );
+      // Check cache first
+      const cacheKey = `chart_${symbol}`;
+      const cachedChart = getCachedData(cacheKey);
+      if (cachedChart) {
+        setChartData(cachedChart);
+        return;
+      }
+
+      // Get next available API key
+      const apiKeyData = getNextApiKey();
+      if (!apiKeyData) {
+        console.warn("No Alpha Vantage API keys configured");
+        return;
+      }
+
+      // Wait for rate limit
+      await waitForRateLimit();
+
+      const url = `${ALPHA_VANTAGE_BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${apiKeyData.key}`;
+      const response = await fetch(url);
 
       if (!response.ok) throw new Error("Failed to fetch chart data");
 
       const data = await response.json();
 
-      if (data && data.length > 0) {
-        // Get last 30 data points and transform to expected format
-        const last30 = data.slice(-30).map((item) => ({
-          date: item.datetime,
-          close: item.close,
+      // Check for rate limit or API limit messages
+      if (data["Note"] || data["Information"]) {
+        console.warn(
+          `Alpha Vantage rate limit for chart ${symbol} (Key ${apiKeyData.index + 1})`,
+        );
+
+        // Mark this key as failed and try with next key
+        markKeyAsFailed(apiKeyData.index);
+
+        // Retry with next key
+        return await fetchChartData();
+      }
+
+      // Check for error message
+      if (data["Error Message"]) {
+        console.error(`Chart data error for ${symbol}:`, data["Error Message"]);
+        return;
+      }
+
+      const timeSeries = data["Time Series (Daily)"];
+      if (timeSeries && Object.keys(timeSeries).length > 0) {
+        // Extract last 10 days of closing prices
+        const dates = Object.keys(timeSeries).slice(0, 10).reverse();
+        const chartPoints = dates.map((date) => ({
+          date: date,
+          close: parseFloat(timeSeries[date]["4. close"]),
         }));
-        setChartData(last30);
+        setChartData(chartPoints);
+        setCachedData(cacheKey, chartPoints);
       }
     } catch (err) {
       console.error(`Error fetching chart data for ${symbol}:`, err);
@@ -162,15 +340,17 @@ function StockCard({ symbol }) {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([fetchStockQuote(), fetchChartData()]);
+      // Fetch sequentially to respect rate limits (not in parallel)
+      await fetchStockQuote();
+      await fetchChartData();
       setLoading(false);
     };
 
     // Initial fetch
     fetchData();
 
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(fetchData, 60000);
+    // Auto-refresh every 5 minutes (respects Alpha Vantage rate limits)
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [symbol]);
@@ -213,12 +393,37 @@ function StockCard({ symbol }) {
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           minHeight: "200px",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          textAlign: "center",
         }}
       >
+        <p
+          style={{
+            color: theme.text,
+            fontSize: "1rem",
+            fontWeight: "600",
+            marginBottom: "0.5rem",
+          }}
+        >
+          {symbol}
+        </p>
         <p style={{ color: theme.negative, fontSize: "0.875rem" }}>
-          Error loading {symbol}
+          {error.includes("rate limit")
+            ? "⏱️ Rate limit reached"
+            : "❌ Error loading data"}
+        </p>
+        <p
+          style={{
+            color: theme.textSecondary,
+            fontSize: "0.75rem",
+            marginTop: "0.5rem",
+          }}
+        >
+          {error.includes("rate limit")
+            ? "Please wait a moment..."
+            : "Please try again later"}
         </p>
       </div>
     );
@@ -342,7 +547,7 @@ function StockWidget() {
           📈 Market Watch
         </h2>
         <p style={{ fontSize: "0.875rem", color: theme.textSecondary }}>
-          Real-time stock prices • Auto-refreshes every 60 seconds
+          Real-time stock prices • Auto-refreshes every 5 minutes
         </p>
       </div>
 
