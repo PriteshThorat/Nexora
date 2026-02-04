@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Header from "../components/Header";
+import StockWidget from "../components/StockWidget";
 
 function DashboardPage() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const darkMode = useSelector((state) => state.theme.darkMode);
+  const [showAdviceModal, setShowAdviceModal] = useState(false);
+  const [financialAdvice, setFinancialAdvice] = useState(null);
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [adviceError, setAdviceError] = useState("");
 
   useEffect(() => {
     // Check if user is authenticated
@@ -28,6 +33,289 @@ function DashboardPage() {
     localStorage.removeItem("username");
     localStorage.removeItem("profileComplete");
     navigate("/login");
+  };
+
+  // Helper function to format text with markdown-style formatting
+  const formatTextContent = (text) => {
+    if (!text) return text;
+
+    // Remove all backslashes (they're used for escaping in the source text)
+    let cleanText = text
+      .replace(/\\/g, "") // Remove ALL backslashes
+      .replace(/^\*\*\s*/g, "")
+      .replace(/\s*\*\*$/g, "");
+
+    // Split by **bold** markers (match pairs properly)
+    const parts = cleanText.split(/(\*\*[^*]+\*\*)/);
+
+    return parts.map((part, i) => {
+      // Handle bold text between **
+      if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+        return (
+          <strong key={i} style={{ fontWeight: "700", color: theme.text }}>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+
+      // Remove any unpaired ** markers
+      let cleanedPart = part.replace(/\*\*/g, "");
+
+      // Handle italic text between single * (only if no **)
+      if (cleanedPart.includes("*")) {
+        const italicParts = cleanedPart.split(/(\*[^*]+\*)/);
+        return italicParts.map((iPart, j) => {
+          if (
+            iPart.startsWith("*") &&
+            iPart.endsWith("*") &&
+            iPart.length > 2
+          ) {
+            return (
+              <em
+                key={`${i}-${j}`}
+                style={{ fontStyle: "italic", color: theme.textSecondary }}
+              >
+                {iPart.slice(1, -1)}
+              </em>
+            );
+          }
+          // Remove any remaining single * markers
+          return iPart.replace(/\*/g, "");
+        });
+      }
+
+      return cleanedPart;
+    });
+  };
+
+  // Helper function to format the advice text with proper styling
+  const formatAdviceText = (text) => {
+    if (!text) return null;
+
+    const lines = text.split("\n");
+    const elements = [];
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+
+      // Skip empty lines
+      if (trimmedLine === "") {
+        return;
+      }
+
+      // Handle ### headers (main sections like "### 1. Savings Recommendation")
+      if (trimmedLine.startsWith("###")) {
+        const headerText = trimmedLine.replace(/^###\s*/, "");
+        elements.push(
+          <h2
+            key={index}
+            style={{
+              fontSize: fontSize.xl,
+              fontWeight: "700",
+              color: theme.accent,
+              marginTop: spacing.xl,
+              marginBottom: spacing.md,
+              borderLeft: `4px solid ${theme.accent}`,
+              paddingLeft: spacing.md,
+              background: `${theme.accent}15`,
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.sm,
+              borderRadius: "0.25rem",
+            }}
+          >
+            {headerText}
+          </h2>,
+        );
+        return;
+      }
+
+      // Handle bullet points (lines starting with • or *)
+      if (trimmedLine.startsWith("•") || trimmedLine.startsWith("*")) {
+        const bulletText = trimmedLine.replace(/^[•*]\s*/, "");
+
+        // Check if this bullet has a colon (subsection header)
+        if (bulletText.includes(":") && bulletText.indexOf(":") < 80) {
+          const colonIndex = bulletText.indexOf(":");
+          const beforeColon = bulletText.substring(0, colonIndex);
+
+          // If short text before colon, it's likely a subsection header
+          if (beforeColon.split(" ").length < 8) {
+            // Clean ALL * markers from the label (both ** and single *)
+            const cleanLabel = beforeColon
+              .replace(/\*/g, "")
+              .replace(/\\/g, "");
+            const afterColon = bulletText.substring(colonIndex + 1);
+
+            // Check if afterColon starts with * (like ":**")
+            const cleanAfterColon = afterColon.replace(/^\*+\s*/, " ");
+
+            elements.push(
+              <h4
+                key={index}
+                style={{
+                  fontSize: fontSize.md,
+                  fontWeight: "700",
+                  color: theme.text,
+                  marginTop: spacing.md,
+                  marginBottom: spacing.sm,
+                  marginLeft: spacing.md,
+                  paddingLeft: spacing.sm,
+                  borderLeft: `3px solid ${theme.accent}`,
+                }}
+              >
+                • <strong>{cleanLabel}:</strong>
+                {formatTextContent(cleanAfterColon)}
+              </h4>,
+            );
+            return;
+          }
+        }
+
+        // Regular bullet point
+        elements.push(
+          <div
+            key={index}
+            style={{
+              marginLeft: spacing.lg,
+              marginBottom: spacing.xs,
+              paddingLeft: spacing.md,
+            }}
+          >
+            <p
+              style={{
+                color: theme.text,
+                lineHeight: "1.7",
+              }}
+            >
+              • {formatTextContent(bulletText)}
+            </p>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle numbered list items in final section (e.g., "1. **Define Your Goal:**")
+      if (/^\d+\.\s+\*\*/.test(trimmedLine)) {
+        elements.push(
+          <div
+            key={index}
+            style={{
+              marginLeft: spacing.md,
+              marginTop: spacing.md,
+              marginBottom: spacing.sm,
+            }}
+          >
+            <p
+              style={{
+                color: theme.text,
+                lineHeight: "1.8",
+                fontWeight: "600",
+              }}
+            >
+              {formatTextContent(trimmedLine)}
+            </p>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle lines with colons (e.g., "Recommendation: Text" or "Purpose: Text")
+      if (
+        trimmedLine.includes(":") &&
+        !trimmedLine.startsWith("•") &&
+        trimmedLine.indexOf(":") < 80
+      ) {
+        const colonIndex = trimmedLine.indexOf(":");
+        const beforeColon = trimmedLine.substring(0, colonIndex);
+
+        // If it's a short label followed by colon, format as a labeled item
+        if (beforeColon.split(" ").length <= 5) {
+          // Check if the label contains ** markers
+          const cleanLabel = beforeColon.replace(/\*\*/g, "");
+          const afterColon = trimmedLine.substring(colonIndex + 1);
+
+          elements.push(
+            <div
+              key={index}
+              style={{
+                marginLeft: spacing.lg,
+                marginBottom: spacing.sm,
+              }}
+            >
+              <p
+                style={{
+                  color: theme.text,
+                  lineHeight: "1.7",
+                }}
+              >
+                <strong style={{ fontWeight: "700" }}>{cleanLabel}:</strong>
+                {formatTextContent(afterColon)}
+              </p>
+            </div>,
+          );
+          return;
+        }
+      }
+
+      // Handle regular paragraphs
+      elements.push(
+        <p
+          key={index}
+          style={{
+            marginBottom: spacing.sm,
+            marginLeft: spacing.md,
+            color: theme.text,
+            lineHeight: "1.7",
+          }}
+        >
+          {formatTextContent(trimmedLine)}
+        </p>,
+      );
+    });
+
+    return elements;
+  };
+
+  const handleGetFinancialAdvice = async () => {
+    setLoadingAdvice(true);
+    setAdviceError("");
+    setShowAdviceModal(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setAdviceError("Authentication required. Please login again.");
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(
+        "http://localhost:8000/api/agents/financial_advisor/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setFinancialAdvice(data);
+      } else {
+        const errorData = await response.json();
+        setAdviceError(
+          errorData.message ||
+            "Failed to get financial advice. Please ensure your financial profile is complete.",
+        );
+      }
+    } catch (err) {
+      setAdviceError("Network error. Please try again.");
+    } finally {
+      setLoadingAdvice(false);
+    }
   };
 
   // Design system - consistent with HomePage
@@ -87,8 +375,15 @@ function DashboardPage() {
 
   const quickActions = [
     {
-      title: "AI Financial Advisor",
+      title: "Financial Advisor",
       description: "Get personalized financial advice",
+      icon: "�",
+      onClick: handleGetFinancialAdvice,
+      color: "#f59e0b",
+    },
+    {
+      title: "AI Financial Advisor",
+      description: "Chat with AI advisor",
       icon: "💬",
       path: "/chatbot",
       color: theme.accent,
@@ -414,7 +709,9 @@ function DashboardPage() {
                 {quickActions.map((action, index) => (
                   <div
                     key={index}
-                    onClick={() => navigate(action.path)}
+                    onClick={() =>
+                      action.onClick ? action.onClick() : navigate(action.path)
+                    }
                     style={{
                       background: theme.cardBgAlt,
                       borderRadius: "0.75rem",
@@ -549,6 +846,9 @@ function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Stock Market Widget */}
+          <StockWidget />
 
           {/* Financial Overview Card */}
           <div
@@ -748,6 +1048,335 @@ function DashboardPage() {
         />
         Assist Me
       </button>
+
+      {/* Financial Advice Modal */}
+      {showAdviceModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: spacing.md,
+          }}
+          onClick={() => setShowAdviceModal(false)}
+        >
+          <div
+            style={{
+              background: theme.cardBg,
+              borderRadius: "1rem",
+              padding: spacing.lg,
+              maxWidth: "900px",
+              maxHeight: "90vh",
+              overflow: "auto",
+              boxShadow: theme.shadowHover,
+              border: `1px solid ${theme.border}`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: spacing.md,
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: fontSize.xl,
+                  fontWeight: "bold",
+                  color: theme.text,
+                  fontFamily: "'Roboto Mono', monospace",
+                }}
+              >
+                Financial Advisor Recommendations
+              </h2>
+              <button
+                onClick={() => setShowAdviceModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.5rem",
+                  color: theme.textSecondary,
+                  cursor: "pointer",
+                  padding: "0.5rem",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingAdvice && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: spacing.xl,
+                  color: theme.textSecondary,
+                }}
+              >
+                <p style={{ fontSize: fontSize.md }}>
+                  Analyzing your financial profile...
+                </p>
+              </div>
+            )}
+
+            {adviceError && (
+              <div
+                style={{
+                  background: darkMode ? "#7f1d1d" : "#fee2e2",
+                  border: `1px solid ${darkMode ? "#991b1b" : "#fecaca"}`,
+                  borderRadius: "0.5rem",
+                  padding: spacing.md,
+                  marginBottom: spacing.md,
+                }}
+              >
+                <p
+                  style={{
+                    color: darkMode ? "#fca5a5" : "#991b1b",
+                    fontSize: fontSize.sm,
+                  }}
+                >
+                  {adviceError}
+                </p>
+              </div>
+            )}
+
+            {financialAdvice && !loadingAdvice && (
+              <div>
+                {/* User Profile Summary */}
+                <div
+                  style={{
+                    background: theme.cardBgAlt,
+                    borderRadius: "0.75rem",
+                    padding: spacing.md,
+                    marginBottom: spacing.md,
+                    border: `1px solid ${theme.border}`,
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: fontSize.lg,
+                      fontWeight: "600",
+                      color: theme.text,
+                      marginBottom: spacing.sm,
+                    }}
+                  >
+                    Your Financial Profile
+                  </h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+                      gap: spacing.sm,
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontSize: fontSize.xs,
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        Monthly Income
+                      </p>
+                      <p
+                        style={{
+                          fontSize: fontSize.md,
+                          fontWeight: "600",
+                          color: theme.text,
+                        }}
+                      >
+                        ${financialAdvice.user_profile.income.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: fontSize.xs,
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        Monthly Expenses
+                      </p>
+                      <p
+                        style={{
+                          fontSize: fontSize.md,
+                          fontWeight: "600",
+                          color: theme.text,
+                        }}
+                      >
+                        ${financialAdvice.user_profile.expenses.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: fontSize.xs,
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        Savings Potential
+                      </p>
+                      <p
+                        style={{
+                          fontSize: fontSize.md,
+                          fontWeight: "600",
+                          color: theme.success,
+                        }}
+                      >
+                        $
+                        {financialAdvice.user_profile.savings_potential.toFixed(
+                          2,
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: fontSize.xs,
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        Risk Tolerance
+                      </p>
+                      <p
+                        style={{
+                          fontSize: fontSize.md,
+                          fontWeight: "600",
+                          color: theme.text,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {financialAdvice.user_profile.risk_tolerance}
+                      </p>
+                    </div>
+                  </div>
+                  {financialAdvice.user_profile.goal && (
+                    <div style={{ marginTop: spacing.sm }}>
+                      <p
+                        style={{
+                          fontSize: fontSize.xs,
+                          color: theme.textSecondary,
+                        }}
+                      >
+                        Financial Goal
+                      </p>
+                      <p
+                        style={{
+                          fontSize: fontSize.md,
+                          fontWeight: "600",
+                          color: theme.text,
+                        }}
+                      >
+                        {financialAdvice.user_profile.goal}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Financial Advice */}
+                <div
+                  style={{
+                    background: theme.cardBg,
+                    borderRadius: "0.75rem",
+                    padding: spacing.lg,
+                    border: `1px solid ${theme.border}`,
+                    maxHeight: "500px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: fontSize.lg,
+                      fontWeight: "700",
+                      color: theme.text,
+                      marginBottom: spacing.md,
+                      borderBottom: `2px solid ${theme.border}`,
+                      paddingBottom: spacing.sm,
+                    }}
+                  >
+                    Personalized Financial Advice
+                  </h3>
+                  <div
+                    style={{
+                      fontSize: fontSize.sm,
+                      color: theme.text,
+                    }}
+                  >
+                    {formatAdviceText(financialAdvice.advice.advice)}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: spacing.sm,
+                    marginTop: spacing.md,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <button
+                    onClick={() => navigate("/financial-profile")}
+                    style={{
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      background: "transparent",
+                      border: `2px solid ${theme.accent}`,
+                      borderRadius: "0.5rem",
+                      color: theme.accent,
+                      fontSize: fontSize.sm,
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      fontFamily: "'Roboto Mono', monospace",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = theme.accent;
+                      e.currentTarget.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = theme.accent;
+                    }}
+                  >
+                    Update Profile
+                  </button>
+                  <button
+                    onClick={() => setShowAdviceModal(false)}
+                    style={{
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      background: theme.accent,
+                      border: "none",
+                      borderRadius: "0.5rem",
+                      color: "white",
+                      fontSize: fontSize.sm,
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      fontFamily: "'Roboto Mono', monospace",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = theme.accentHover;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = theme.accent;
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
