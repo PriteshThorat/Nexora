@@ -5,78 +5,9 @@ import { Chart, registerables } from "chart.js";
 // Register Chart.js components
 Chart.register(...registerables);
 
-// Alpha Vantage API Configuration - Multiple keys for rotation
-// Add your keys to .env as: VITE_ALPHA_VANTAGE_KEY_1, VITE_ALPHA_VANTAGE_KEY_2, etc.
-const API_KEYS = [
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_1,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_2,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_3,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_4,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_5,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_6,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_7,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_8,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_9,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_10,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_11,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_12,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_13,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_14,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_15,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_16,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_17,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_18,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_19,
-  import.meta.env.VITE_ALPHA_VANTAGE_KEY_20,
-].filter(Boolean); // Remove undefined keys
-
+// Alpha Vantage API Configuration
+const ALPHA_VANTAGE_API_KEY = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY;
 const ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
-
-// API Key rotation management
-let currentKeyIndex = 0;
-const failedKeys = new Set(); // Track keys that hit rate limits
-
-const getNextApiKey = () => {
-  if (API_KEYS.length === 0) {
-    console.error("No Alpha Vantage API keys configured");
-    return null;
-  }
-
-  // Try to find a working key
-  const startIndex = currentKeyIndex;
-  do {
-    const key = API_KEYS[currentKeyIndex];
-    if (!failedKeys.has(currentKeyIndex)) {
-      return { key, index: currentKeyIndex };
-    }
-    currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  } while (currentKeyIndex !== startIndex);
-
-  // All keys failed, reset and try again
-  console.warn("All API keys exhausted, resetting...");
-  failedKeys.clear();
-  return { key: API_KEYS[currentKeyIndex], index: currentKeyIndex };
-};
-
-const markKeyAsFailed = (keyIndex) => {
-  failedKeys.add(keyIndex);
-  console.log(
-    `Key ${keyIndex + 1} marked as rate limited. ${failedKeys.size}/${API_KEYS.length} keys exhausted.`,
-  );
-  // Move to next key
-  currentKeyIndex = (keyIndex + 1) % API_KEYS.length;
-};
-
-// Reset failed keys after 5 minutes (when rate limits typically reset)
-setInterval(
-  () => {
-    if (failedKeys.size > 0) {
-      console.log("Resetting rate-limited API keys...");
-      failedKeys.clear();
-    }
-  },
-  5 * 60 * 1000,
-);
 
 // Stock symbols to track
 const STOCK_SYMBOLS = ["AAPL", "META", "AMZN"];
@@ -147,16 +78,15 @@ function StockCard({ symbol }) {
         return;
       }
 
-      // Get next available API key
-      const apiKeyData = getNextApiKey();
-      if (!apiKeyData) {
-        throw new Error("No Alpha Vantage API keys configured");
+      // Check if API key is configured
+      if (!ALPHA_VANTAGE_API_KEY) {
+        throw new Error("Alpha Vantage API key not configured");
       }
 
       // Wait for rate limit
       await waitForRateLimit();
 
-      const url = `${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKeyData.key}`;
+      const url = `${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
       const response = await fetch(url);
 
       if (!response.ok) throw new Error("Failed to fetch stock quote");
@@ -166,16 +96,8 @@ function StockCard({ symbol }) {
       // Check for rate limit or API limit messages
       if (data["Note"] || data["Information"]) {
         const message = data["Note"] || data["Information"];
-        console.warn(
-          `Alpha Vantage rate limit for ${symbol} (Key ${apiKeyData.index + 1}):`,
-          message,
-        );
-
-        // Mark this key as failed and try with next key
-        markKeyAsFailed(apiKeyData.index);
-
-        // Retry with next key
-        return await fetchStockQuote();
+        console.warn(`Alpha Vantage rate limit for ${symbol}:`, message);
+        throw new Error("API rate limit reached. Please wait.");
       }
 
       // Check for error message
@@ -207,7 +129,7 @@ function StockCard({ symbol }) {
   };
 
   /**
-   * Fetch daily historical data using Alpha Vantage TIME_SERIES_DAILY with automatic key rotation
+   * Fetch daily historical data using Alpha Vantage TIME_SERIES_DAILY
    * Gets last 7-10 trading days for sparkline
    */
   const fetchChartData = async () => {
@@ -220,17 +142,16 @@ function StockCard({ symbol }) {
         return;
       }
 
-      // Get next available API key
-      const apiKeyData = getNextApiKey();
-      if (!apiKeyData) {
-        console.warn("No Alpha Vantage API keys configured");
+      // Check if API key is configured
+      if (!ALPHA_VANTAGE_API_KEY) {
+        console.warn("Alpha Vantage API key not configured");
         return;
       }
 
       // Wait for rate limit
       await waitForRateLimit();
 
-      const url = `${ALPHA_VANTAGE_BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${apiKeyData.key}`;
+      const url = `${ALPHA_VANTAGE_BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${ALPHA_VANTAGE_API_KEY}`;
       const response = await fetch(url);
 
       if (!response.ok) throw new Error("Failed to fetch chart data");
@@ -239,15 +160,8 @@ function StockCard({ symbol }) {
 
       // Check for rate limit or API limit messages
       if (data["Note"] || data["Information"]) {
-        console.warn(
-          `Alpha Vantage rate limit for chart ${symbol} (Key ${apiKeyData.index + 1})`,
-        );
-
-        // Mark this key as failed and try with next key
-        markKeyAsFailed(apiKeyData.index);
-
-        // Retry with next key
-        return await fetchChartData();
+        console.warn(`Alpha Vantage rate limit for chart ${symbol}`);
+        return; // Silently fail for chart data
       }
 
       // Check for error message
