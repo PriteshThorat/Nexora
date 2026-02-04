@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import axios from "axios";
+import { setUserProfile } from "../store/userSlice";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("signin");
   const [formData, setFormData] = useState({
     username: "",
@@ -42,6 +45,9 @@ const LoginPage = () => {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("username", response.data.user.username);
       localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Store user profile in Redux
+      dispatch(setUserProfile(response.data.user));
 
       // Check if user has completed their financial profile
       const hasFinancialProfile =

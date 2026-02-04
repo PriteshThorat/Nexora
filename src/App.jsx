@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import FinancialProfilePage from "./pages/FinancialProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import ChatbotPage from "./pages/ChatbotPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   const darkMode = useSelector((state) => state.theme.darkMode);
@@ -35,6 +36,7 @@ function App() {
         <Route path="/financial-profile" element={<FinancialProfilePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </Router>
   );
