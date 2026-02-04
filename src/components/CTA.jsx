@@ -11,7 +11,7 @@ const CTA = () => {
             Ready to Transform Your Financial Future?
           </h2>
           <p className="text-xl text-white/90 mb-8">
-            Join thousands of users who trust FinanceAI for smarter financial
+            Join thousands of users who trust Nexora for smarter financial
             decisions
           </p>
           <div className="flex gap-4 justify-center mb-8">
