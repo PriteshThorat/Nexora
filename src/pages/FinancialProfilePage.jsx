@@ -4,6 +4,8 @@ import { useSelector } from "react-redux";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 function FinancialProfilePage() {
   const navigate = useNavigate();
   const darkMode = useSelector((state) => state.theme.darkMode);
@@ -43,7 +45,7 @@ function FinancialProfilePage() {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/users/financial_profile_update/",
+        `${API_BASE_URL}/api/users/financial_profile_update/`,
         {
           method: "PATCH",
           headers: {

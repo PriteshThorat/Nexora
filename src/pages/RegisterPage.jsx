@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("signup");
@@ -30,7 +32,7 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/users/register/",
+        `${API_BASE_URL}/api/users/register/`,
         formData,
         {
           headers: {

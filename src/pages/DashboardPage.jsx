@@ -5,6 +5,8 @@ import { toggleDarkMode } from "../store/themeSlice";
 import Header from "../components/Header";
 import StockWidget from "../components/StockWidget";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -29,7 +31,7 @@ function DashboardPage() {
     const fetchUserProfile = async () => {
       try {
         const response = await fetch(
-          "http://localhost:8000/api/users/profile/",
+          `${API_BASE_URL}/api/users/profile/`,
           {
             method: "GET",
             headers: {
@@ -67,7 +69,7 @@ function DashboardPage() {
 
     try {
       // Call logout API
-      await fetch("http://localhost:8000/api/users/logout/", {
+      await fetch(`${API_BASE_URL}/api/users/logout/`, {
         method: "POST",
         headers: {
           Authorization: `Token ${token}`,
@@ -341,7 +343,7 @@ function DashboardPage() {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/agents/financial_advisor/",
+        `${API_BASE_URL}/api/agents/financial_advisor/`,
         {
           method: "POST",
           headers: {

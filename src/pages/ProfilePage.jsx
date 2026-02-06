@@ -9,6 +9,8 @@ import {
 } from "../store/userSlice";
 import Header from "../components/Header";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 function ProfilePage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -31,7 +33,7 @@ function ProfilePage() {
 
       try {
         const response = await fetch(
-          "http://localhost:8000/api/users/profile/",
+          `${API_BASE_URL}/api/users/profile/`,
           {
             method: "GET",
             headers: {
@@ -107,7 +109,7 @@ function ProfilePage() {
       const updateData = { ...userProfile, [fieldName]: editValue };
 
       const response = await fetch(
-        "http://localhost:8000/api/users/financial_profile_update/",
+        `${API_BASE_URL}/api/users/financial_profile_update/`,
         {
           method: "PUT",
           headers: {

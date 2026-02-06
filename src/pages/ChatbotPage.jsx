@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 function ChatbotPage() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([
@@ -42,7 +44,7 @@ function ChatbotPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:8000/api/agents/chat_sessions/?limit=10",
+        `${API_BASE_URL}/api/agents/chat_sessions/?limit=10`,
         {
           method: "GET",
           headers: {
@@ -81,7 +83,7 @@ function ChatbotPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:8000/api/agents/finance_chatbot/",
+        `${API_BASE_URL}/api/agents/finance_chatbot/`,
         {
           method: "POST",
           headers: {
@@ -184,7 +186,7 @@ function ChatbotPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/agents/chat_history/?session_id=${sessionId}`,
+        `${API_BASE_URL}/api/agents/chat_history/?session_id=${sessionId}`,
         {
           method: "GET",
           headers: {
@@ -219,7 +221,7 @@ function ChatbotPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:8000/api/agents/delete_session/",
+        `${API_BASE_URL}/api/agents/delete_session/`,
         {
           method: "POST",
           headers: {
