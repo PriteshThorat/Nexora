@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleDarkMode } from "../store/themeSlice";
-import Header from "../components/Header";
 import StockWidget from "../components/StockWidget";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -761,164 +760,185 @@ function DashboardPage() {
             paddingTop: spacing.lg,
           }}
         >
-          {/* Top Bar */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing.lg,
-            }}
-          >
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            {/* Top Bar */}
             <div
               style={{
-                flex: 1,
-                maxWidth: "400px",
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: isMobile ? "stretch" : "center",
+                gap: isMobile ? spacing.sm : spacing.lg,
+                marginBottom: spacing.lg,
               }}
             >
-              <input
-                type="text"
-                placeholder="Search for services"
-                style={{
-                  width: "100%",
-                  padding: spacing.sm,
-                  borderRadius: "8px",
-                  border: `1px solid ${theme.border}`,
-                  background: theme.cardBg,
-                  color: theme.text,
-                  fontSize: fontSize.sm,
-                }}
-              />
-            </div>
-            <div
-              style={{ display: "flex", gap: spacing.md, alignItems: "center" }}
-            >
-              <span
-                style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
-              >
-                Trades
-              </span>
-              <span
-                style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
-              >
-                Support
-              </span>
-              <span
-                style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
-              >
-                Language
-              </span>
-              <button
-                onClick={() => dispatch(toggleDarkMode())}
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  border: darkMode ? "2px solid #475569" : "2px solid #e5e7eb",
-                  backgroundColor: darkMode ? "#334155" : "#f3f4f6",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
-                  e.currentTarget.style.backgroundColor = darkMode
-                    ? "#475569"
-                    : "#e5e7eb";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.backgroundColor = darkMode
-                    ? "#334155"
-                    : "#f3f4f6";
-                }}
-                aria-label="Toggle dark mode"
-              >
-                {darkMode ? (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#fbbf24"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                  </svg>
-                ) : (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="#475569"
-                    stroke="none"
-                  >
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                )}
-              </button>
-              <button
-                style={{
-                  padding: `${spacing.xs} ${spacing.sm}`,
-                  background: "transparent",
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: "8px",
-                  color: theme.text,
-                  fontSize: fontSize.sm,
-                  cursor: "pointer",
-                }}
-              >
-                List your request
-              </button>
               <div
                 style={{
-                  position: "relative",
-                  width: "32px",
-                  height: "32px",
-                  cursor: "pointer",
+                  flex: 1,
+                  maxWidth: isMobile ? "100%" : "400px",
                 }}
               >
-                <span style={{ fontSize: "1.5rem" }}></span>
-                <div
+                <input
+                  type="text"
+                  placeholder="Search for services"
                   style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: "8px",
-                    height: "8px",
-                    background: "#10b981",
-                    borderRadius: "50%",
+                    width: "100%",
+                    padding: spacing.sm,
+                    borderRadius: "8px",
+                    border: `1px solid ${theme.border}`,
+                    background: theme.cardBg,
+                    color: theme.text,
+                    fontSize: fontSize.sm,
                   }}
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Content Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr",
-              gap: spacing.lg,
-              marginBottom: spacing.lg,
-            }}
-          >
+              <div
+                style={{
+                  display: "flex",
+                  gap: spacing.sm,
+                  alignItems: "center",
+                  justifyContent: isMobile ? "space-between" : "flex-end",
+                  flexWrap: isMobile ? "wrap" : "nowrap",
+                }}
+              >
+                {!isMobile && (
+                  <>
+                    <span
+                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                    >
+                      Trades
+                    </span>
+                    <span
+                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                    >
+                      Support
+                    </span>
+                    <span
+                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                    >
+                      Language
+                    </span>
+                  </>
+                )}
+
+                <button
+                  onClick={() => dispatch(toggleDarkMode())}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    border: darkMode ? "2px solid #475569" : "2px solid #e5e7eb",
+                    backgroundColor: darkMode ? "#334155" : "#f3f4f6",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s ease",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.backgroundColor = darkMode
+                      ? "#475569"
+                      : "#e5e7eb";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.backgroundColor = darkMode
+                      ? "#334155"
+                      : "#f3f4f6";
+                  }}
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="#475569"
+                      stroke="none"
+                    >
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                  )}
+                </button>
+
+                <button
+                  style={{
+                    padding: `${spacing.xs} ${spacing.sm}`,
+                    background: "transparent",
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: "8px",
+                    color: theme.text,
+                    fontSize: fontSize.sm,
+                    cursor: "pointer",
+                    width: isMobile ? "100%" : "auto",
+                    flexBasis: isMobile ? "100%" : "auto",
+                  }}
+                >
+                  List your request
+                </button>
+
+                <div
+                  style={{
+                    position: "relative",
+                    width: "32px",
+                    height: "32px",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: "1.5rem" }}></span>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      width: "8px",
+                      height: "8px",
+                      background: "#10b981",
+                      borderRadius: "50%",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Content Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr",
+                gap: spacing.lg,
+                marginBottom: spacing.lg,
+              }}
+            >
             {/* Promotional Card */}
             <div
               style={{
                 background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                 borderRadius: "16px",
-                padding: spacing.xl,
+                padding: isMobile ? spacing.lg : spacing.xl,
                 color: "white",
                 position: "relative",
                 overflow: "hidden",
@@ -938,7 +958,7 @@ function DashboardPage() {
                 </div>
                 <h2
                   style={{
-                    fontSize: fontSize.xxl,
+                    fontSize: isMobile ? fontSize.xl : fontSize.xxl,
                     fontWeight: "700",
                     marginBottom: spacing.md,
                     lineHeight: 1.2,
@@ -1077,7 +1097,13 @@ function DashboardPage() {
                   </span>
                 </div>
                 {/* Simple chart line */}
-                <svg width="100%" height="60" style={{ marginTop: spacing.sm }}>
+                <svg
+                  width="100%"
+                  height="60"
+                  viewBox="0 0 270 60"
+                  preserveAspectRatio="none"
+                  style={{ marginTop: spacing.sm, display: "block" }}
+                >
                   <polyline
                     points="0,40 30,35 60,45 90,30 120,25 150,35 180,20 210,30 240,25 270,15"
                     fill="none"
@@ -1091,8 +1117,9 @@ function DashboardPage() {
               <div
                 style={{
                   display: "flex",
-                  gap: spacing.md,
+                  gap: isMobile ? spacing.sm : spacing.md,
                   fontSize: fontSize.sm,
+                  flexWrap: isMobile ? "wrap" : "nowrap",
                 }}
               >
                 <div>
@@ -1153,15 +1180,17 @@ function DashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
 
           {/* Quick Action Icons */}
           <div
             style={{
               display: "flex",
-              gap: spacing.lg,
+              gap: isMobile ? spacing.md : spacing.lg,
               marginBottom: spacing.lg,
-              justifyContent: "center",
+              justifyContent: isMobile ? "flex-start" : "center",
+              overflowX: isMobile ? "auto" : "visible",
+              paddingBottom: isMobile ? spacing.xs : 0,
             }}
           >
             {[
@@ -1180,6 +1209,7 @@ function DashboardPage() {
                   alignItems: "center",
                   gap: spacing.xs,
                   cursor: "pointer",
+                  flex: "0 0 auto",
                 }}
               >
                 <div
@@ -1224,7 +1254,9 @@ function DashboardPage() {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: isMobile ? "flex-start" : "center",
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? spacing.sm : 0,
                 marginBottom: spacing.lg,
               }}
             >
@@ -1237,10 +1269,19 @@ function DashboardPage() {
               >
                 Statistic
               </h2>
-              <div style={{ display: "flex", gap: spacing.sm }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: spacing.sm,
+                  flexWrap: "wrap",
+                  width: isMobile ? "100%" : "auto",
+                }}
+              >
                 <button
                   style={{
-                    padding: `${spacing.xs} ${spacing.md}`,
+                    padding: isMobile
+                      ? `${spacing.xs} ${spacing.sm}`
+                      : `${spacing.xs} ${spacing.md}`,
                     background: "transparent",
                     border: `1px solid ${theme.border}`,
                     borderRadius: "8px",
@@ -1256,7 +1297,9 @@ function DashboardPage() {
                 </button>
                 <button
                   style={{
-                    padding: `${spacing.xs} ${spacing.md}`,
+                    padding: isMobile
+                      ? `${spacing.xs} ${spacing.sm}`
+                      : `${spacing.xs} ${spacing.md}`,
                     background: "transparent",
                     border: `1px solid ${theme.border}`,
                     borderRadius: "8px",
@@ -1272,7 +1315,9 @@ function DashboardPage() {
                 </button>
                 <button
                   style={{
-                    padding: `${spacing.xs} ${spacing.md}`,
+                    padding: isMobile
+                      ? `${spacing.xs} ${spacing.sm}`
+                      : `${spacing.xs} ${spacing.md}`,
                     background: "transparent",
                     border: `1px solid ${theme.border}`,
                     borderRadius: "8px",
@@ -1290,9 +1335,10 @@ function DashboardPage() {
             <div
               style={{
                 display: "flex",
-                gap: spacing.lg,
+                gap: isMobile ? spacing.md : spacing.lg,
                 marginBottom: spacing.md,
                 fontSize: fontSize.sm,
+                flexWrap: "wrap",
               }}
             >
               <div
@@ -1332,14 +1378,20 @@ function DashboardPage() {
             </div>
 
             {/* Chart */}
-            <svg width="100%" height="200" style={{ overflow: "visible" }}>
+            <svg
+              width="100%"
+              height="200"
+              viewBox="0 0 720 200"
+              preserveAspectRatio="none"
+              style={{ display: "block" }}
+            >
               {/* Grid lines */}
               {[0, 1, 2, 3, 4].map((i) => (
                 <line
                   key={i}
                   x1="0"
                   y1={i * 50}
-                  x2="100%"
+                  x2="720"
                   y2={i * 50}
                   stroke={theme.border}
                   strokeWidth="1"
@@ -1373,6 +1425,8 @@ function DashboardPage() {
                 marginTop: spacing.sm,
                 fontSize: "0.7rem",
                 color: theme.textSecondary,
+                flexWrap: isMobile ? "wrap" : "nowrap",
+                gap: isMobile ? spacing.xs : 0,
               }}
             >
               {[
@@ -1646,6 +1700,7 @@ function DashboardPage() {
 
           {/* Stock Widget */}
           <StockWidget />
+          </div>
         </div>
       </div>
 
@@ -1654,14 +1709,14 @@ function DashboardPage() {
         onClick={() => navigate("/chatbot")}
         style={{
           position: "fixed",
-          bottom: "2rem",
-          right: "2rem",
-          padding: "1rem 2rem",
+          bottom: isMobile ? "1rem" : "2rem",
+          right: isMobile ? "1rem" : "2rem",
+          padding: isMobile ? "0.75rem 1rem" : "1rem 2rem",
           background: darkMode ? "#0f172a" : "white",
           color: darkMode ? "white" : "#6366f1",
           border: darkMode ? "2px solid #6366f1" : "2px solid #6366f1",
           borderRadius: "9999px",
-          fontSize: fontSize.md,
+          fontSize: isMobile ? fontSize.sm : fontSize.md,
           fontWeight: "600",
           cursor: "pointer",
           display: "flex",

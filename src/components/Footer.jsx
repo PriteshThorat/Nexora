@@ -26,7 +26,7 @@ const Footer = () => {
     <footer
       style={{
         padding: isMobile
-          ? `${spacing.xl} ${spacing.md} ${spacing.md}`
+          ? `${spacing.lg} ${spacing.md} ${spacing.md}`
           : `${spacing.xxl} ${spacing.xxl} ${spacing.lg}`,
         backgroundColor: darkMode ? "#0f172a" : "#1f2937",
         color: "white",
@@ -35,12 +35,12 @@ const Footer = () => {
     >
       <div
         style={{
-          maxWidth: "1400px",
+          maxWidth: "1200px",
           margin: "0 auto",
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr",
           gap: isMobile ? spacing.lg : spacing.xxl,
-          marginBottom: spacing.xxl,
+          marginBottom: isMobile ? spacing.lg : spacing.xxl,
         }}
       >
         <div>
@@ -231,10 +231,11 @@ const Footer = () => {
       <div
         style={{
           borderTop: "1px solid #374151",
-          paddingTop: spacing.lg,
+          paddingTop: isMobile ? spacing.md : spacing.lg,
           textAlign: "center",
           color: "#9ca3af",
           fontSize: fontSize.xs,
+          paddingInline: isMobile ? spacing.md : 0,
         }}
       >
         <p>© 2026 Nexora. All rights reserved.</p>

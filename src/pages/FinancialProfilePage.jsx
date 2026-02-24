@@ -84,23 +84,23 @@ function FinancialProfilePage() {
     <>
       <Header />
       <div className="min-h-screen bg-white dark:bg-slate-900 pt-8 pb-16 font-['Roboto_Mono',monospace] transition-colors">
-        <div className="max-w-4xl mx-auto px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Section */}
           <div className="text-center mb-12">
             <div className="inline-block bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               🚀 02 Financial Profile Setup
             </div>
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-slate-100 mb-3 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-slate-100 mb-3 tracking-tight">
               Let's Set Up Your Financial Profile
             </h1>
-            <p className="text-gray-600 dark:text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-gray-600 dark:text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
               You don't need to finish everything at once, so you can pick up
               right where you left off next time.
             </p>
           </div>
 
           {/* Main Form Card */}
-          <div className="bg-gray-50 dark:bg-slate-800 rounded-2xl p-10 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors">
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 p-4 rounded-lg mb-8">
                 {error}
@@ -114,7 +114,7 @@ function FinancialProfilePage() {
                   Financial Overview
                 </h2>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Monthly Income */}
                   <div>
                     <label
@@ -210,7 +210,7 @@ function FinancialProfilePage() {
                   Personal Information
                 </h2>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Credit History */}
                   <div>
                     <label
@@ -332,7 +332,7 @@ function FinancialProfilePage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end pt-6 border-t border-slate-300 dark:border-slate-600">
+              <div className="flex flex-col sm:flex-row gap-4 justify-end items-stretch sm:items-center pt-6 border-t border-slate-300 dark:border-slate-600">
                 <button
                   type="submit"
                   disabled={loading}
@@ -354,7 +354,7 @@ function FinancialProfilePage() {
           </div>
 
           {/* Info Card */}
-          <div className="mt-8 p-6 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl flex items-start gap-4">
+          <div className="mt-8 p-6 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl flex flex-col sm:flex-row items-start gap-4">
             <span className="text-2xl">ℹ️</span>
             <div>
               <h3 className="text-indigo-600 dark:text-indigo-400 font-semibold mb-2">

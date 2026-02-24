@@ -93,9 +93,6 @@ const Header = () => {
       {/* Navigation */}
       <nav
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
           padding: isMobile
             ? `${spacing.sm} ${spacing.md}`
             : `${spacing.md} ${spacing.xxl}`,
@@ -108,65 +105,40 @@ const Header = () => {
           fontFamily: "'Roboto Mono', monospace",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div
-            style={{
-              fontSize: isMobile ? fontSize.md : fontSize.lg,
-              fontWeight: "bold",
-              color: "#667eea",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Nexora
-          </div>
-        </div>
-
-        {/* Mobile Menu Button */}
-        {isMobile && (
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: spacing.xs,
-              color: theme.text,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            aria-label="Toggle menu"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              {isMenuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </>
-              ) : (
-                <>
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </>
-              )}
-            </svg>
-          </button>
-        )}
-
-        {/* Desktop Navigation */}
-        {!isMobile && (
-          <>
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: spacing.md,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div
-              style={{ display: "flex", gap: spacing.lg, alignItems: "center" }}
+              style={{
+                fontSize: isMobile ? fontSize.md : fontSize.lg,
+                fontWeight: "bold",
+                color: "#667eea",
+                letterSpacing: "-0.02em",
+              }}
             >
+              Nexora
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          {!isMobile && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  gap: spacing.lg,
+                  alignItems: "center",
+                  flexShrink: 1,
+                }}
+              >
               <Link
                 to="/about"
                 style={{
@@ -265,11 +237,16 @@ const Header = () => {
               >
                 Contact
               </Link>
-            </div>
+              </div>
 
-            <div
-              style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}
-            >
+              <div
+                style={{
+                  display: "flex",
+                  gap: spacing.sm,
+                  alignItems: "center",
+                  flexShrink: 0,
+                }}
+              >
               {/* Dark Mode Toggle */}
               <button
                 onClick={handleToggleDarkMode}
@@ -446,9 +423,51 @@ const Header = () => {
                   </Link>
                 </>
               )}
-            </div>
-          </>
-        )}
+              </div>
+            </>
+          )}
+
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: spacing.xs,
+                color: theme.text,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+              aria-label="Toggle menu"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                {isMenuOpen ? (
+                  <>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </>
+                )}
+              </svg>
+            </button>
+          )}
+        </div>
       </nav>
 
       {/* Mobile Menu */}
