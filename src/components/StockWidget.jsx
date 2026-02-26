@@ -5,26 +5,12 @@ import { Chart, registerables } from "chart.js";
 // Register Chart.js components
 Chart.register(...registerables);
 
-// Alpha Vantage API Configuration
-const ALPHA_VANTAGE_API_KEY = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY;
-const ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
+// Backend API base URL (Django Alpha Vantage proxy)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 // Stock symbols to track
 const STOCK_SYMBOLS = ["AAPL", "META", "AMZN"];
-
-// Rate limiting: Alpha Vantage free tier allows 1 req/second
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1200; // 1.2 seconds between requests
-
-const waitForRateLimit = async () => {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    await new Promise((resolve) => setTimeout(resolve, waitTime));
-  }
-  lastRequestTime = Date.now();
-};
 
 // Simple cache to reduce API calls (5 min TTL)
 const cache = new Map();
@@ -66,7 +52,7 @@ function StockCard({ symbol }) {
   };
 
   /**
-   * Fetch current stock quote using Alpha Vantage GLOBAL_QUOTE with automatic key rotation
+   * Fetch current stock quote via backend /api/v1/market-data (GLOBAL_QUOTE)
    */
   const fetchStockQuote = async () => {
     try {
@@ -78,33 +64,29 @@ function StockCard({ symbol }) {
         return;
       }
 
-      // Check if API key is configured
-      if (!ALPHA_VANTAGE_API_KEY) {
-        throw new Error("Alpha Vantage API key not configured");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication required. Please log in again.");
       }
 
-      // Wait for rate limit
-      await waitForRateLimit();
+      const url = `${API_BASE_URL.replace(
+        /\/$/,
+        "",
+      )}/api/v1/market-data/?symbol=${encodeURIComponent(symbol)}`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+      const result = await response.json().catch(() => null);
 
-      const url = `${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
-      const response = await fetch(url);
-
-      if (!response.ok) throw new Error("Failed to fetch stock quote");
-
-      const data = await response.json();
-
-      // Check for rate limit or API limit messages
-      if (data["Note"] || data["Information"]) {
-        const message = data["Note"] || data["Information"];
-        console.warn(`Alpha Vantage rate limit for ${symbol}:`, message);
-        throw new Error("API rate limit reached. Please wait.");
+      if (!response.ok || !result) {
+        const message =
+          (result && result.error) || "Failed to fetch stock quote";
+        throw new Error(message);
       }
 
-      // Check for error message
-      if (data["Error Message"]) {
-        throw new Error(data["Error Message"]);
-      }
-
+      const data = result.data || {};
       const quote = data["Global Quote"];
       if (quote && Object.keys(quote).length > 0 && quote["01. symbol"]) {
         // Normalize Alpha Vantage response
@@ -129,7 +111,7 @@ function StockCard({ symbol }) {
   };
 
   /**
-   * Fetch daily historical data using Alpha Vantage TIME_SERIES_DAILY
+   * Fetch daily historical data via backend /api/v1/market-data (TIME_SERIES_DAILY)
    * Gets last 7-10 trading days for sparkline
    */
   const fetchChartData = async () => {
@@ -142,34 +124,31 @@ function StockCard({ symbol }) {
         return;
       }
 
-      // Check if API key is configured
-      if (!ALPHA_VANTAGE_API_KEY) {
-        console.warn("Alpha Vantage API key not configured");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        // If user is not authenticated, skip chart fetch
         return;
       }
 
-      // Wait for rate limit
-      await waitForRateLimit();
+      const url = `${API_BASE_URL.replace(
+        /\/$/,
+        "",
+      )}/api/v1/market-data/?symbol=${encodeURIComponent(
+        symbol,
+      )}&function=TIME_SERIES_DAILY`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+      const result = await response.json().catch(() => null);
 
-      const url = `${ALPHA_VANTAGE_BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${ALPHA_VANTAGE_API_KEY}`;
-      const response = await fetch(url);
-
-      if (!response.ok) throw new Error("Failed to fetch chart data");
-
-      const data = await response.json();
-
-      // Check for rate limit or API limit messages
-      if (data["Note"] || data["Information"]) {
-        console.warn(`Alpha Vantage rate limit for chart ${symbol}`);
-        return; // Silently fail for chart data
-      }
-
-      // Check for error message
-      if (data["Error Message"]) {
-        console.error(`Chart data error for ${symbol}:`, data["Error Message"]);
+      if (!response.ok || !result) {
+        console.error("Failed to fetch chart data for", symbol, result);
         return;
       }
 
+      const data = result.data || {};
       const timeSeries = data["Time Series (Daily)"];
       if (timeSeries && Object.keys(timeSeries).length > 0) {
         // Extract last 10 days of closing prices
@@ -445,6 +424,170 @@ function StockWidget() {
     textSecondary: darkMode ? "#94a3b8" : "#6b7280",
   };
 
+  // Search state
+  const [searchSymbol, setSearchSymbol] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  // Watched stocks state
+  const [watchedStocks, setWatchedStocks] = useState([]);
+  const [loadingTick, setLoadingTick] = useState(null);
+  // Store all available symbols in frontend
+  const ALL_SYMBOLS = [
+    "AAPL",
+    "META",
+    "AMZN",
+    "GOOGL",
+    "MSFT",
+    "TSLA",
+    "NFLX",
+    "NVDA",
+    "INTC",
+    "IBM",
+    "ADBE",
+    "ORCL",
+    "PYPL",
+    "CRM",
+    "CSCO",
+    "QCOM",
+    "AMD",
+    "SHOP",
+    "UBER",
+    "BIDU",
+    "SBUX",
+    "ZM",
+    "TWTR",
+    "SNAP",
+    "SQ",
+    "PLTR",
+    "COIN",
+    "ROKU",
+    "DOCU",
+    "SPOT",
+  ];
+  const token = localStorage.getItem("token");
+
+  // Fetch watched stocks on mount
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/v1/get-watched-stocks`, {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setWatchedStocks(data.watched_stocks || []));
+  }, [token]);
+
+  // Tick/untick handlers
+  const handleTick = async (symbol) => {
+    if (!token) {
+      console.error("No token found");
+      return;
+    }
+    setLoadingTick(symbol);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL.replace(/\/$/, "")}/api/v1/tick-stock`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+          body: JSON.stringify({ symbol }),
+        },
+      );
+      if (response.ok) {
+        setWatchedStocks((prev) => {
+          const updated = [...new Set([...prev, symbol])];
+          window.dispatchEvent(
+            new CustomEvent("watchedStocksChanged", {
+              detail: { watchedStocks: updated },
+            }),
+          );
+          return updated;
+        });
+      } else {
+        console.error("Failed to tick stock:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error ticking stock:", error);
+    } finally {
+      setLoadingTick(null);
+    }
+  };
+
+  const handleUntick = async (symbol) => {
+    if (!token) {
+      console.error("No token found");
+      return;
+    }
+    setLoadingTick(symbol);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL.replace(/\/$/, "")}/api/v1/untick-stock`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+          body: JSON.stringify({ symbol }),
+        },
+      );
+      if (response.ok) {
+        setWatchedStocks((prev) => {
+          const updated = prev.filter((s) => s !== symbol);
+          window.dispatchEvent(
+            new CustomEvent("watchedStocksChanged", {
+              detail: { watchedStocks: updated },
+            }),
+          );
+          return updated;
+        });
+      } else {
+        console.error("Failed to untick stock:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error unticking stock:", error);
+    } finally {
+      setLoadingTick(null);
+    }
+  };
+
+  // Enhanced StockCard with tick/untick
+  function StockCardWithTick({ symbol }) {
+    const isWatched = watchedStocks.includes(symbol);
+    const isLoading = loadingTick === symbol;
+    return (
+      <div style={{ position: "relative" }}>
+        <StockCard symbol={symbol} />
+        <button
+          onClick={() =>
+            isWatched ? handleUntick(symbol) : handleTick(symbol)
+          }
+          disabled={isLoading}
+          style={{
+            position: "absolute",
+            top: "1rem",
+            right: "1rem",
+            background: isWatched ? "#10b981" : "#e5e7eb",
+            color: isWatched ? "white" : "#1f2937",
+            border: "none",
+            borderRadius: "50%",
+            width: "32px",
+            height: "32px",
+            fontSize: "1.25rem",
+            cursor: isLoading ? "wait" : "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            transition: "background 0.2s",
+            opacity: isLoading ? 0.7 : 1,
+          }}
+          title={isWatched ? "Remove from dashboard" : "Add to dashboard"}
+        >
+          {isLoading ? "..." : isWatched ? "✓" : "✗"}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginBottom: "2rem" }}>
       {/* Section Header */}
@@ -465,17 +608,141 @@ function StockWidget() {
         </p>
       </div>
 
+      {/* Search Input with Dropdown */}
+      <div style={{ marginBottom: "1.5rem", position: "relative" }}>
+        <input
+          type="text"
+          placeholder="Search stock symbol (e.g. AAPL)"
+          value={searchSymbol}
+          onChange={(e) => setSearchSymbol(e.target.value.toUpperCase())}
+          onFocus={() => setShowDropdown(true)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          style={{
+            padding: "0.75rem 1rem",
+            borderRadius: "0.5rem",
+            border: `1px solid ${theme.textSecondary}`,
+            fontSize: "1rem",
+            width: "100%",
+            maxWidth: "400px",
+            fontFamily: "'Roboto Mono', monospace",
+            color: theme.text,
+            background: darkMode ? "#1e293b" : "white",
+          }}
+        />
+
+        {/* Dropdown Suggestions */}
+        {showDropdown && (
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              maxWidth: "400px",
+              background: darkMode ? "#0f172a" : "white",
+              border: `1px solid ${theme.textSecondary}`,
+              borderRadius: "0.5rem",
+              marginTop: "0.25rem",
+              maxHeight: "300px",
+              overflowY: "auto",
+              zIndex: 1000,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            }}
+          >
+            {ALL_SYMBOLS.filter(
+              (s) =>
+                !watchedStocks.includes(s) &&
+                (s.toUpperCase().includes(searchSymbol.toUpperCase()) ||
+                  searchSymbol === ""),
+            ).map((symbol) => (
+              <div
+                key={symbol}
+                onClick={() => {
+                  handleTick(symbol);
+                  setSearchSymbol("");
+                  setShowDropdown(false);
+                }}
+                style={{
+                  padding: "0.75rem 1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  cursor: "pointer",
+                  borderBottom: `1px solid ${theme.textSecondary}20`,
+                  transition: "background 0.2s",
+                  background:
+                    searchSymbol === symbol
+                      ? darkMode
+                        ? "#1e293b"
+                        : "#f3f4f6"
+                      : "transparent",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = darkMode
+                    ? "#1e293b"
+                    : "#f3f4f6")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background =
+                    searchSymbol === symbol
+                      ? darkMode
+                        ? "#1e293b"
+                        : "#f3f4f6"
+                      : "transparent")
+                }
+              >
+                <input
+                  type="checkbox"
+                  checked={watchedStocks.includes(symbol)}
+                  onChange={() => {
+                    handleTick(symbol);
+                    setSearchSymbol("");
+                    setShowDropdown(false);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={loadingTick === symbol}
+                  style={{
+                    cursor: loadingTick === symbol ? "wait" : "pointer",
+                    width: "18px",
+                    height: "18px",
+                    opacity: loadingTick === symbol ? 0.7 : 1,
+                  }}
+                />
+                <span
+                  style={{
+                    color: theme.text,
+                    fontFamily: "'Roboto Mono', monospace",
+                    fontSize: "0.9rem",
+                    fontWeight: "500",
+                  }}
+                >
+                  {symbol}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Stock Cards Grid */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(240px, 100%), 1fr))",
           gap: "1.5rem",
         }}
       >
-        {STOCK_SYMBOLS.map((symbol) => (
-          <StockCard key={symbol} symbol={symbol} />
-        ))}
+        {/* Show watched stocks only */}
+        {watchedStocks.length > 0 ? (
+          watchedStocks.map((symbol) => (
+            <StockCardWithTick key={symbol} symbol={symbol} />
+          ))
+        ) : (
+          <p style={{ color: theme.textSecondary, gridColumn: "1 / -1" }}>
+            No stocks in your dashboard. Search and add stocks to get started!
+          </p>
+        )}
       </div>
     </div>
   );

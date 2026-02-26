@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleDarkMode } from "../store/themeSlice";
 import StockWidget from "../components/StockWidget";
+import NewsSentimentWidget from "../components/NewsSentimentWidget";
+import SentimentNewsHeading from "../components/SentimentNewsHeading";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -29,16 +32,13 @@ function DashboardPage() {
     // Fetch user profile
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/users/profile/`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Token ${token}`,
-              "Content-Type": "application/json",
-            },
+        const response = await fetch(`${API_BASE_URL}/api/users/profile/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
           },
-        );
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -499,6 +499,8 @@ function DashboardPage() {
           background: theme.bg,
           display: "flex",
           fontFamily: "'Roboto Mono', monospace",
+          overflowX: "hidden",
+          width: "100%",
         }}
       >
         {/* Sidebar */}
@@ -755,12 +757,134 @@ function DashboardPage() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
+            maxWidth: "100%",
+            overflowX: "hidden",
             marginLeft: isMobile ? 0 : "240px",
             padding: isMobile ? spacing.sm : spacing.lg,
-            paddingTop: spacing.lg,
+            paddingTop: isMobile ? 0 : spacing.lg,
+            paddingBottom: isMobile ? "5rem" : spacing.lg,
           }}
         >
-          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          {/* Mobile Top Header */}
+          {isMobile && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: `${spacing.xs} ${spacing.md}`,
+                background: theme.cardBg,
+                borderBottom: `1px solid ${theme.border}`,
+                position: "sticky",
+                top: 0,
+                zIndex: 100,
+                marginBottom: spacing.sm,
+                marginLeft: `-${spacing.sm}`,
+                marginRight: `-${spacing.sm}`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: fontSize.md,
+                  fontWeight: "700",
+                  color: theme.text,
+                }}
+              >
+                Nexora
+              </span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: spacing.sm,
+                }}
+              >
+                <button
+                  onClick={() => dispatch(toggleDarkMode())}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    border: darkMode
+                      ? "2px solid #475569"
+                      : "2px solid #e5e7eb",
+                    backgroundColor: darkMode ? "#334155" : "#f3f4f6",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#fbbf24"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="#475569"
+                      stroke="none"
+                    >
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                  )}
+                </button>
+                <div
+                  onClick={() => navigate("/profile")}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  👤
+                </div>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    padding: `${spacing.xs} ${spacing.sm}`,
+                    background: darkMode ? "#7f1d1d" : "#fee2e2",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: darkMode ? "#fca5a5" : "#991b1b",
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
             {/* Top Bar */}
             <div
               style={{
@@ -805,17 +929,26 @@ function DashboardPage() {
                 {!isMobile && (
                   <>
                     <span
-                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                      style={{
+                        color: theme.textSecondary,
+                        fontSize: fontSize.sm,
+                      }}
                     >
                       Trades
                     </span>
                     <span
-                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                      style={{
+                        color: theme.textSecondary,
+                        fontSize: fontSize.sm,
+                      }}
                     >
                       Support
                     </span>
                     <span
-                      style={{ color: theme.textSecondary, fontSize: fontSize.sm }}
+                      style={{
+                        color: theme.textSecondary,
+                        fontSize: fontSize.sm,
+                      }}
                     >
                       Language
                     </span>
@@ -828,7 +961,9 @@ function DashboardPage() {
                     width: "36px",
                     height: "36px",
                     borderRadius: "50%",
-                    border: darkMode ? "2px solid #475569" : "2px solid #e5e7eb",
+                    border: darkMode
+                      ? "2px solid #475569"
+                      : "2px solid #e5e7eb",
                     backgroundColor: darkMode ? "#334155" : "#f3f4f6",
                     cursor: "pointer",
                     display: "flex",
@@ -892,8 +1027,7 @@ function DashboardPage() {
                     color: theme.text,
                     fontSize: fontSize.sm,
                     cursor: "pointer",
-                    width: isMobile ? "100%" : "auto",
-                    flexBasis: isMobile ? "100%" : "auto",
+                    display: isMobile ? "none" : "block",
                   }}
                 >
                   List your request
@@ -933,783 +1067,848 @@ function DashboardPage() {
                 marginBottom: spacing.lg,
               }}
             >
-            {/* Promotional Card */}
-            <div
-              style={{
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                borderRadius: "16px",
-                padding: isMobile ? spacing.lg : spacing.xl,
-                color: "white",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "600",
-                    letterSpacing: "1px",
-                    marginBottom: spacing.xs,
-                    opacity: 0.9,
-                  }}
-                >
-                  FINANCIAL INSIGHTS
-                </div>
-                <h2
-                  style={{
-                    fontSize: isMobile ? fontSize.xl : fontSize.xxl,
-                    fontWeight: "700",
-                    marginBottom: spacing.md,
-                    lineHeight: 1.2,
-                  }}
-                >
-                  The best offers
-                  <br />
-                  for experts
-                </h2>
-                <button
-                  onClick={() => navigate("/features")}
-                  style={{
-                    padding: `${spacing.sm} ${spacing.lg}`,
-                    background: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    color: "#059669",
-                    fontSize: fontSize.sm,
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  Show more
-                </button>
-              </div>
+              {/* Promotional Card */}
               <div
                 style={{
-                  position: "absolute",
-                  right: "-20px",
-                  bottom: "-20px",
-                  fontSize: "200px",
-                  opacity: 0.1,
-                }}
-              ></div>
-            </div>
-
-            {/* Wallet View Card */}
-            <div
-              style={{
-                background: theme.cardBg,
-                borderRadius: "16px",
-                padding: spacing.lg,
-                border: `1px solid ${theme.border}`,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                  marginBottom: spacing.md,
+                  background:
+                    "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  borderRadius: "16px",
+                  padding: isMobile ? spacing.lg : spacing.xl,
+                  color: "white",
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.25rem",
-                  }}
-                ></div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: fontSize.sm,
-                      fontWeight: "600",
-                      color: theme.text,
-                    }}
-                  >
-                    Wallet view
-                  </div>
+                <div style={{ position: "relative", zIndex: 1 }}>
                   <div
                     style={{
                       fontSize: "0.75rem",
-                      color: theme.textSecondary,
+                      fontWeight: "600",
+                      letterSpacing: "1px",
+                      marginBottom: spacing.xs,
+                      opacity: 0.9,
                     }}
                   >
-                    A brief of your situation
+                    FINANCIAL INSIGHTS
                   </div>
-                </div>
-                <span
-                  style={{
-                    marginLeft: "auto",
-                    background: "#10b981",
-                    color: "white",
-                    fontSize: "0.7rem",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    fontWeight: "600",
-                  }}
-                >
-                  New
-                </span>
-              </div>
-
-              {/* Balance */}
-              <div style={{ marginBottom: spacing.md }}>
-                <div
-                  style={{
-                    fontSize: fontSize.xxl,
-                    fontWeight: "700",
-                    color: theme.text,
-                  }}
-                >
-                  $
-                  {userProfile?.monthly_income
-                    ? parseFloat(userProfile.monthly_income).toLocaleString()
-                    : "0"}
-                  <span
+                  <h2
                     style={{
-                      fontSize: fontSize.md,
-                      color:
-                        userProfile?.monthly_income &&
-                        userProfile?.monthly_expenses
-                          ? parseFloat(userProfile.monthly_income) >
-                            parseFloat(userProfile.monthly_expenses)
-                            ? theme.success
-                            : "#ef4444"
-                          : theme.textSecondary,
-                      marginLeft: spacing.xs,
-                    }}
-                  >
-                    {userProfile?.monthly_income &&
-                    userProfile?.monthly_expenses
-                      ? parseFloat(userProfile.monthly_income) >
-                        parseFloat(userProfile.monthly_expenses)
-                        ? `+${(((parseFloat(userProfile.monthly_income) - parseFloat(userProfile.monthly_expenses)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
-                        : `-${(((parseFloat(userProfile.monthly_expenses) - parseFloat(userProfile.monthly_income)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
-                      : ""}
-                  </span>
-                </div>
-                {/* Simple chart line */}
-                <svg
-                  width="100%"
-                  height="60"
-                  viewBox="0 0 270 60"
-                  preserveAspectRatio="none"
-                  style={{ marginTop: spacing.sm, display: "block" }}
-                >
-                  <polyline
-                    points="0,40 30,35 60,45 90,30 120,25 150,35 180,20 210,30 240,25 270,15"
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-
-              {/* Holdings */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: isMobile ? spacing.sm : spacing.md,
-                  fontSize: fontSize.sm,
-                  flexWrap: isMobile ? "wrap" : "nowrap",
-                }}
-              >
-                <div>
-                  <span style={{ fontWeight: "700", color: theme.text }}>
-                    {userProfile?.monthly_income
-                      ? parseFloat(userProfile.monthly_income).toFixed(0)
-                      : "0"}
-                  </span>
-                  <span
-                    style={{ color: theme.textSecondary, marginLeft: "4px" }}
-                  >
-                    Income
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontWeight: "700", color: theme.text }}>
-                    {userProfile?.monthly_expenses
-                      ? parseFloat(userProfile.monthly_expenses).toFixed(0)
-                      : "0"}
-                  </span>
-                  <span
-                    style={{ color: theme.textSecondary, marginLeft: "4px" }}
-                  >
-                    Expenses
-                  </span>
-                </div>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
-                >
-                  <span
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      background:
-                        userProfile?.risk_tolerance === "high"
-                          ? "#ef4444"
-                          : userProfile?.risk_tolerance === "medium"
-                            ? "#f59e0b"
-                            : "#10b981",
-                      display: "inline-block",
-                    }}
-                  />
-                  <span
-                    style={{
+                      fontSize: isMobile ? fontSize.xl : fontSize.xxl,
                       fontWeight: "700",
-                      color: theme.text,
-                      textTransform: "capitalize",
+                      marginBottom: spacing.md,
+                      lineHeight: 1.2,
                     }}
                   >
-                    {userProfile?.risk_tolerance || "N/A"}
-                  </span>
-                  <span
-                    style={{ color: theme.textSecondary, marginLeft: "2px" }}
+                    The best offers
+                    <br />
+                    for experts
+                  </h2>
+                  <button
+                    onClick={() => navigate("/features")}
+                    style={{
+                      padding: `${spacing.sm} ${spacing.lg}`,
+                      background: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#059669",
+                      fontSize: fontSize.sm,
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
                   >
-                    Risk
-                  </span>
+                    Show more
+                  </button>
                 </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: "-20px",
+                    bottom: "-20px",
+                    fontSize: "200px",
+                    opacity: 0.1,
+                  }}
+                ></div>
               </div>
-            </div>
-            </div>
 
-          {/* Quick Action Icons */}
-          <div
-            style={{
-              display: "flex",
-              gap: isMobile ? spacing.md : spacing.lg,
-              marginBottom: spacing.lg,
-              justifyContent: isMobile ? "flex-start" : "center",
-              overflowX: isMobile ? "auto" : "visible",
-              paddingBottom: isMobile ? spacing.xs : 0,
-            }}
-          >
-            {[
-              { icon: "", label: "Blog", path: "/about" },
-              { icon: "", label: "Invest", path: "/features" },
-              { icon: "", label: "Chill", path: "/" },
-              { icon: "", label: "Trick", path: "/" },
-              { icon: "", label: "News", path: "/about" },
-            ].map((item, i) => (
+              {/* Wallet View Card */}
               <div
-                key={i}
-                onClick={() => navigate(item.path)}
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: spacing.xs,
-                  cursor: "pointer",
-                  flex: "0 0 auto",
+                  background: theme.cardBg,
+                  borderRadius: "16px",
+                  padding: spacing.lg,
+                  border: `1px solid ${theme.border}`,
                 }}
               >
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    background: theme.cardBg,
-                    borderRadius: "12px",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.5rem",
-                    border: `1px solid ${theme.border}`,
+                    gap: spacing.sm,
+                    marginBottom: spacing.md,
                   }}
                 >
-                  {item.icon}
-                </div>
-                <span
-                  style={{
-                    fontSize: "0.75rem",
-                    color: theme.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Statistics Chart Section */}
-          <div
-            style={{
-              background: theme.cardBg,
-              borderRadius: "16px",
-              padding: spacing.lg,
-              marginBottom: spacing.lg,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: isMobile ? "flex-start" : "center",
-                flexDirection: isMobile ? "column" : "row",
-                gap: isMobile ? spacing.sm : 0,
-                marginBottom: spacing.lg,
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: fontSize.xl,
-                  fontWeight: "700",
-                  color: theme.text,
-                }}
-              >
-                Statistic
-              </h2>
-              <div
-                style={{
-                  display: "flex",
-                  gap: spacing.sm,
-                  flexWrap: "wrap",
-                  width: isMobile ? "100%" : "auto",
-                }}
-              >
-                <button
-                  style={{
-                    padding: isMobile
-                      ? `${spacing.xs} ${spacing.sm}`
-                      : `${spacing.xs} ${spacing.md}`,
-                    background: "transparent",
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: "8px",
-                    color: theme.textSecondary,
-                    fontSize: fontSize.sm,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing.xs,
-                  }}
-                >
-                  Sell
-                </button>
-                <button
-                  style={{
-                    padding: isMobile
-                      ? `${spacing.xs} ${spacing.sm}`
-                      : `${spacing.xs} ${spacing.md}`,
-                    background: "transparent",
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: "8px",
-                    color: theme.textSecondary,
-                    fontSize: fontSize.sm,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing.xs,
-                  }}
-                >
-                  Buy
-                </button>
-                <button
-                  style={{
-                    padding: isMobile
-                      ? `${spacing.xs} ${spacing.sm}`
-                      : `${spacing.xs} ${spacing.md}`,
-                    background: "transparent",
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: "8px",
-                    color: theme.textSecondary,
-                    fontSize: fontSize.sm,
-                    cursor: "pointer",
-                  }}
-                >
-                  Monthly
-                </button>
-              </div>
-            </div>
-
-            {/* Chart Legend */}
-            <div
-              style={{
-                display: "flex",
-                gap: isMobile ? spacing.md : spacing.lg,
-                marginBottom: spacing.md,
-                fontSize: fontSize.sm,
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: spacing.xs,
-                }}
-              >
-                <div
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    background: "#3b82f6",
-                    borderRadius: "50%",
-                  }}
-                />
-                <span style={{ color: theme.textSecondary }}>19,730</span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: spacing.xs,
-                }}
-              >
-                <div
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    background: "#ef4444",
-                    borderRadius: "50%",
-                  }}
-                />
-                <span style={{ color: theme.textSecondary }}>21,120</span>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <svg
-              width="100%"
-              height="200"
-              viewBox="0 0 720 200"
-              preserveAspectRatio="none"
-              style={{ display: "block" }}
-            >
-              {/* Grid lines */}
-              {[0, 1, 2, 3, 4].map((i) => (
-                <line
-                  key={i}
-                  x1="0"
-                  y1={i * 50}
-                  x2="720"
-                  y2={i * 50}
-                  stroke={theme.border}
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
-              ))}
-
-              {/* Sell line (red dashed) */}
-              <polyline
-                points="0,120 80,100 160,110 240,95 320,100 400,90 480,85 560,95 640,90 720,80"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="2"
-                strokeDasharray="8 4"
-              />
-
-              {/* Buy line (blue solid) */}
-              <polyline
-                points="0,130 80,110 160,95 240,105 320,90 400,110 480,100 560,85 640,95 720,90"
-                fill="none"
-                stroke="#3b82f6"
-                strokeWidth="2"
-              />
-            </svg>
-
-            {/* Date labels */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: spacing.sm,
-                fontSize: "0.7rem",
-                color: theme.textSecondary,
-                flexWrap: isMobile ? "wrap" : "nowrap",
-                gap: isMobile ? spacing.xs : 0,
-              }}
-            >
-              {[
-                "02Jun",
-                "03Mon",
-                "04Tue",
-                "05Wed",
-                "06Thu",
-                "07Fri",
-                "08Sat",
-                "09Sun",
-                "10Mon",
-                "11Tue",
-              ].map((date, i) => (
-                <span key={i}>{date}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom Section - Offers and Subscription */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "1fr 400px",
-              gap: spacing.lg,
-              marginBottom: spacing.lg,
-            }}
-          >
-            {/* Offer Card */}
-            <div
-              style={{
-                background: theme.cardBg,
-                borderRadius: "16px",
-                padding: spacing.lg,
-                border: `1px solid ${theme.border}`,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: spacing.sm,
-                  marginBottom: spacing.md,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "1.5rem",
-                  }}
-                ></span>
-                <span
-                  style={{
-                    fontSize: fontSize.md,
-                    fontWeight: "600",
-                    color: theme.text,
-                  }}
-                >
-                  Offer
-                </span>
-              </div>
-              <h3
-                style={{
-                  fontSize: fontSize.lg,
-                  fontWeight: "600",
-                  color: theme.text,
-                  marginBottom: spacing.sm,
-                }}
-              >
-                Create your own profile
-              </h3>
-              <p
-                style={{
-                  fontSize: fontSize.sm,
-                  color: theme.textSecondary,
-                  marginBottom: spacing.md,
-                }}
-              >
-                in avatar bilder platform without login process.
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  gap: spacing.sm,
-                  marginBottom: spacing.md,
-                }}
-              >
-                {[1, 2, 3].map((i) => (
                   <div
-                    key={i}
                     style={{
                       width: "40px",
                       height: "40px",
                       borderRadius: "50%",
-                      background: `linear-gradient(135deg, ${i === 1 ? "#ec4899, #be185d" : i === 2 ? "#8b5cf6, #6d28d9" : "#f59e0b, #d97706"})`,
-                      border: "2px solid white",
+                      background:
+                        "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.25rem",
                     }}
-                  />
-                ))}
+                  ></div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: fontSize.sm,
+                        fontWeight: "600",
+                        color: theme.text,
+                      }}
+                    >
+                      Wallet view
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        color: theme.textSecondary,
+                      }}
+                    >
+                      A brief of your situation
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      background: "#10b981",
+                      color: "white",
+                      fontSize: "0.7rem",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    New
+                  </span>
+                </div>
+
+                {/* Balance */}
+                <div style={{ marginBottom: spacing.md }}>
+                  <div
+                    style={{
+                      fontSize: fontSize.xxl,
+                      fontWeight: "700",
+                      color: theme.text,
+                    }}
+                  >
+                    $
+                    {userProfile?.monthly_income
+                      ? parseFloat(userProfile.monthly_income).toLocaleString()
+                      : "0"}
+                    <span
+                      style={{
+                        fontSize: fontSize.md,
+                        color:
+                          userProfile?.monthly_income &&
+                          userProfile?.monthly_expenses
+                            ? parseFloat(userProfile.monthly_income) >
+                              parseFloat(userProfile.monthly_expenses)
+                              ? theme.success
+                              : "#ef4444"
+                            : theme.textSecondary,
+                        marginLeft: spacing.xs,
+                      }}
+                    >
+                      {userProfile?.monthly_income &&
+                      userProfile?.monthly_expenses
+                        ? parseFloat(userProfile.monthly_income) >
+                          parseFloat(userProfile.monthly_expenses)
+                          ? `+${(((parseFloat(userProfile.monthly_income) - parseFloat(userProfile.monthly_expenses)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
+                          : `-${(((parseFloat(userProfile.monthly_expenses) - parseFloat(userProfile.monthly_income)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
+                        : ""}
+                    </span>
+                  </div>
+                  {/* Simple chart line */}
+                  <svg
+                    width="100%"
+                    height="60"
+                    viewBox="0 0 270 60"
+                    preserveAspectRatio="none"
+                    style={{ marginTop: spacing.sm, display: "block" }}
+                  >
+                    <polyline
+                      points="0,40 30,35 60,45 90,30 120,25 150,35 180,20 210,30 240,25 270,15"
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+
+                {/* Holdings */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: isMobile ? spacing.sm : spacing.md,
+                    fontSize: fontSize.sm,
+                    flexWrap: isMobile ? "wrap" : "nowrap",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: "700", color: theme.text }}>
+                      {userProfile?.monthly_income
+                        ? parseFloat(userProfile.monthly_income).toFixed(0)
+                        : "0"}
+                    </span>
+                    <span
+                      style={{ color: theme.textSecondary, marginLeft: "4px" }}
+                    >
+                      Income
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: "700", color: theme.text }}>
+                      {userProfile?.monthly_expenses
+                        ? parseFloat(userProfile.monthly_expenses).toFixed(0)
+                        : "0"}
+                    </span>
+                    <span
+                      style={{ color: theme.textSecondary, marginLeft: "4px" }}
+                    >
+                      Expenses
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        background:
+                          userProfile?.risk_tolerance === "high"
+                            ? "#ef4444"
+                            : userProfile?.risk_tolerance === "medium"
+                              ? "#f59e0b"
+                              : "#10b981",
+                        display: "inline-block",
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontWeight: "700",
+                        color: theme.text,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {userProfile?.risk_tolerance || "N/A"}
+                    </span>
+                    <span
+                      style={{ color: theme.textSecondary, marginLeft: "2px" }}
+                    >
+                      Risk
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => navigate("/financial-profile")}
-                style={{
-                  padding: `${spacing.sm} ${spacing.lg}`,
-                  background: theme.accent,
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "white",
-                  fontSize: fontSize.sm,
-                  fontWeight: "600",
-                  cursor: "pointer",
-                }}
-              >
-                Explore Now
-              </button>
             </div>
 
-            {/* Newsletter Subscription Card */}
+            {/* Quick Action Icons */}
             <div
               style={{
-                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                borderRadius: "16px",
-                padding: spacing.lg,
-                color: "white",
-                position: "relative",
-                overflow: "hidden",
+                display: "flex",
+                gap: isMobile ? spacing.md : spacing.lg,
+                marginBottom: spacing.lg,
+                justifyContent: isMobile ? "flex-start" : "center",
+                overflowX: isMobile ? "auto" : "visible",
+                paddingBottom: isMobile ? spacing.xs : 0,
               }}
             >
-              <button
-                style={{
-                  position: "absolute",
-                  top: spacing.md,
-                  right: spacing.md,
-                  background: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                }}
-              >
-                ×
-              </button>
-              <div
-                style={{
-                  fontSize: "0.65rem",
-                  fontWeight: "600",
-                  letterSpacing: "1px",
-                  marginBottom: spacing.sm,
-                  opacity: 0.9,
-                }}
-              >
-                NEWSPAPER
-              </div>
-              <h3
-                style={{
-                  fontSize: fontSize.xl,
-                  fontWeight: "700",
-                  marginBottom: spacing.sm,
-                  lineHeight: 1.2,
-                }}
-              >
-                Get news on
-                <br />
-                your phone
-              </h3>
-              <p
-                style={{
-                  fontSize: fontSize.sm,
-                  marginBottom: spacing.md,
-                  opacity: 0.9,
-                }}
-              >
-                Priceless and optimal sign
-              </p>
-              <button
-                style={{
-                  padding: `${spacing.sm} ${spacing.lg}`,
-                  background: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#1d4ed8",
-                  fontSize: fontSize.sm,
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  marginBottom: spacing.md,
-                }}
-              >
-                Subscribe
-              </button>
-              <div
-                style={{
-                  fontSize: "100px",
-                  position: "absolute",
-                  bottom: "-20px",
-                  right: "-10px",
-                  opacity: 0.3,
-                }}
-              ></div>
+              {[
+                { icon: "", label: "Blog", path: "/about" },
+                { icon: "", label: "Invest", path: "/features" },
+                { icon: "", label: "Chill", path: "/" },
+                { icon: "", label: "Trick", path: "/" },
+                { icon: "", label: "News", path: "/about" },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  onClick={() => navigate(item.path)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: spacing.xs,
+                    cursor: "pointer",
+                    flex: "0 0 auto",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      background: theme.cardBg,
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.5rem",
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    {item.icon}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: theme.textSecondary,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
 
-          {/* Quick Actions Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile
-                ? "1fr"
-                : "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: spacing.md,
-              marginBottom: spacing.lg,
-            }}
-          >
-            {quickActions.map((action, index) => (
+            {/* Statistics Chart Section */}
+            <div
+              style={{
+                background: theme.cardBg,
+                borderRadius: "16px",
+                padding: spacing.lg,
+                marginBottom: spacing.lg,
+                border: `1px solid ${theme.border}`,
+              }}
+            >
               <div
-                key={index}
-                onClick={() =>
-                  action.onClick ? action.onClick() : navigate(action.path)
-                }
                 style={{
-                  background: theme.cardBg,
-                  borderRadius: "12px",
-                  padding: spacing.md,
-                  cursor: "pointer",
-                  transition: "all 0.3s",
-                  border: `1px solid ${theme.border}`,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: isMobile ? "flex-start" : "center",
+                  flexDirection: isMobile ? "column" : "row",
+                  gap: isMobile ? spacing.sm : 0,
+                  marginBottom: spacing.lg,
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = theme.shadowHover;
-                  e.currentTarget.style.borderColor = action.color;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.borderColor = theme.border;
+              >
+                <h2
+                  style={{
+                    fontSize: fontSize.xl,
+                    fontWeight: "700",
+                    color: theme.text,
+                  }}
+                >
+                  Statistic
+                </h2>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: spacing.sm,
+                    flexWrap: "wrap",
+                    width: isMobile ? "100%" : "auto",
+                  }}
+                >
+                  <button
+                    style={{
+                      padding: isMobile
+                        ? `${spacing.xs} ${spacing.sm}`
+                        : `${spacing.xs} ${spacing.md}`,
+                      background: "transparent",
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: "8px",
+                      color: theme.textSecondary,
+                      fontSize: fontSize.sm,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: spacing.xs,
+                    }}
+                  >
+                    Sell
+                  </button>
+                  <button
+                    style={{
+                      padding: isMobile
+                        ? `${spacing.xs} ${spacing.sm}`
+                        : `${spacing.xs} ${spacing.md}`,
+                      background: "transparent",
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: "8px",
+                      color: theme.textSecondary,
+                      fontSize: fontSize.sm,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: spacing.xs,
+                    }}
+                  >
+                    Buy
+                  </button>
+                  <button
+                    style={{
+                      padding: isMobile
+                        ? `${spacing.xs} ${spacing.sm}`
+                        : `${spacing.xs} ${spacing.md}`,
+                      background: "transparent",
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: "8px",
+                      color: theme.textSecondary,
+                      fontSize: fontSize.sm,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
+              {/* Chart Legend */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: isMobile ? spacing.md : spacing.lg,
+                  marginBottom: spacing.md,
+                  fontSize: fontSize.sm,
+                  flexWrap: "wrap",
                 }}
               >
                 <div
                   style={{
-                    fontSize: "2rem",
-                    marginBottom: spacing.xs,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: spacing.xs,
                   }}
                 >
-                  {action.icon}
+                  <div
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      background: "#3b82f6",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <span style={{ color: theme.textSecondary }}>19,730</span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: spacing.xs,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      background: "#ef4444",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <span style={{ color: theme.textSecondary }}>21,120</span>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <svg
+                width="100%"
+                height="200"
+                viewBox="0 0 720 200"
+                preserveAspectRatio="none"
+                style={{ display: "block" }}
+              >
+                {/* Grid lines */}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <line
+                    key={i}
+                    x1="0"
+                    y1={i * 50}
+                    x2="720"
+                    y2={i * 50}
+                    stroke={theme.border}
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
+                ))}
+
+                {/* Sell line (red dashed) */}
+                <polyline
+                  points="0,120 80,100 160,110 240,95 320,100 400,90 480,85 560,95 640,90 720,80"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                  strokeDasharray="8 4"
+                />
+
+                {/* Buy line (blue solid) */}
+                <polyline
+                  points="0,130 80,110 160,95 240,105 320,90 400,110 480,100 560,85 640,95 720,90"
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="2"
+                />
+              </svg>
+
+              {/* Date labels */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: spacing.sm,
+                  fontSize: "0.7rem",
+                  color: theme.textSecondary,
+                  flexWrap: isMobile ? "wrap" : "nowrap",
+                  gap: isMobile ? spacing.xs : 0,
+                }}
+              >
+                {[
+                  "02Jun",
+                  "03Mon",
+                  "04Tue",
+                  "05Wed",
+                  "06Thu",
+                  "07Fri",
+                  "08Sat",
+                  "09Sun",
+                  "10Mon",
+                  "11Tue",
+                ].map((date, i) => (
+                  <span key={i}>{date}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Section - Offers and Subscription */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 400px",
+                gap: spacing.lg,
+                marginBottom: spacing.lg,
+              }}
+            >
+              {/* Offer Card */}
+              <div
+                style={{
+                  background: theme.cardBg,
+                  borderRadius: "16px",
+                  padding: spacing.lg,
+                  border: `1px solid ${theme.border}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: spacing.sm,
+                    marginBottom: spacing.md,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "1.5rem",
+                    }}
+                  ></span>
+                  <span
+                    style={{
+                      fontSize: fontSize.md,
+                      fontWeight: "600",
+                      color: theme.text,
+                    }}
+                  >
+                    Offer
+                  </span>
                 </div>
                 <h3
                   style={{
-                    fontSize: fontSize.md,
+                    fontSize: fontSize.lg,
                     fontWeight: "600",
                     color: theme.text,
-                    marginBottom: spacing.xs,
+                    marginBottom: spacing.sm,
                   }}
                 >
-                  {action.title}
+                  Create your own profile
                 </h3>
                 <p
                   style={{
                     fontSize: fontSize.sm,
                     color: theme.textSecondary,
+                    marginBottom: spacing.md,
                   }}
                 >
-                  {action.description}
+                  in avatar bilder platform without login process.
                 </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: spacing.sm,
+                    marginBottom: spacing.md,
+                  }}
+                >
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        background: `linear-gradient(135deg, ${i === 1 ? "#ec4899, #be185d" : i === 2 ? "#8b5cf6, #6d28d9" : "#f59e0b, #d97706"})`,
+                        border: "2px solid white",
+                      }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => navigate("/financial-profile")}
+                  style={{
+                    padding: `${spacing.sm} ${spacing.lg}`,
+                    background: theme.accent,
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "white",
+                    fontSize: fontSize.sm,
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Explore Now
+                </button>
               </div>
-            ))}
-          </div>
 
-          {/* Stock Widget */}
-          <StockWidget />
+              {/* Newsletter Subscription Card */}
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  borderRadius: "16px",
+                  padding: spacing.lg,
+                  color: "white",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  style={{
+                    position: "absolute",
+                    top: spacing.md,
+                    right: spacing.md,
+                    background: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    fontSize: "1rem",
+                  }}
+                >
+                  ×
+                </button>
+                <div
+                  style={{
+                    fontSize: "0.65rem",
+                    fontWeight: "600",
+                    letterSpacing: "1px",
+                    marginBottom: spacing.sm,
+                    opacity: 0.9,
+                  }}
+                >
+                  NEWSPAPER
+                </div>
+                <h3
+                  style={{
+                    fontSize: fontSize.xl,
+                    fontWeight: "700",
+                    marginBottom: spacing.sm,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  Get news on
+                  <br />
+                  your phone
+                </h3>
+                <p
+                  style={{
+                    fontSize: fontSize.sm,
+                    marginBottom: spacing.md,
+                    opacity: 0.9,
+                  }}
+                >
+                  Priceless and optimal sign
+                </p>
+                <button
+                  style={{
+                    padding: `${spacing.sm} ${spacing.lg}`,
+                    background: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#1d4ed8",
+                    fontSize: fontSize.sm,
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    marginBottom: spacing.md,
+                  }}
+                >
+                  Subscribe
+                </button>
+                <div
+                  style={{
+                    fontSize: "100px",
+                    position: "absolute",
+                    bottom: "-20px",
+                    right: "-10px",
+                    opacity: 0.3,
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Quick Actions Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile
+                  ? "repeat(2, 1fr)"
+                  : "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: spacing.md,
+                marginBottom: spacing.lg,
+              }}
+            >
+              {quickActions.map((action, index) => (
+                <div
+                  key={index}
+                  onClick={() =>
+                    action.onClick ? action.onClick() : navigate(action.path)
+                  }
+                  style={{
+                    background: theme.cardBg,
+                    borderRadius: "12px",
+                    padding: spacing.md,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                    border: `1px solid ${theme.border}`,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px)";
+                    e.currentTarget.style.boxShadow = theme.shadowHover;
+                    e.currentTarget.style.borderColor = action.color;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.borderColor = theme.border;
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "2rem",
+                      marginBottom: spacing.xs,
+                    }}
+                  >
+                    {action.icon}
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: fontSize.md,
+                      fontWeight: "600",
+                      color: theme.text,
+                      marginBottom: spacing.xs,
+                    }}
+                  >
+                    {action.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: fontSize.sm,
+                      color: theme.textSecondary,
+                    }}
+                  >
+                    {action.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Breaking News Heading */}
+            <SentimentNewsHeading />
+
+            {/* Stock Widget */}
+            <NewsSentimentWidget />
+            <StockWidget />
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: theme.cardBg,
+            borderTop: `1px solid ${theme.border}`,
+            display: "flex",
+            justifyContent: "space-around",
+            alignItems: "center",
+            zIndex: 500,
+            paddingTop: "0.5rem",
+            paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))",
+            boxShadow: "0 -4px 12px rgba(0,0,0,0.08)",
+          }}
+        >
+          {[
+            { icon: "🏠", label: "Home", path: "/dashboard" },
+            { icon: "👤", label: "Profile", path: "/profile" },
+            { icon: "⚡", label: "Services", path: "/features" },
+            { icon: "💬", label: "AI Chat", path: "/chatbot" },
+          ].map((item, i) => (
+            <div
+              key={i}
+              onClick={() => navigate(item.path)}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+                cursor: "pointer",
+                padding: "0.25rem 0.75rem",
+                flex: 1,
+                borderRadius: "8px",
+                transition: "all 0.2s",
+              }}
+            >
+              <span style={{ fontSize: "1.25rem" }}>{item.icon}</span>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  color: theme.textSecondary,
+                  fontWeight: "500",
+                }}
+              >
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Floating AI Chat Button */}
       <button
         onClick={() => navigate("/chatbot")}
         style={{
           position: "fixed",
-          bottom: isMobile ? "1rem" : "2rem",
+          bottom: isMobile ? "4.5rem" : "2rem",
           right: isMobile ? "1rem" : "2rem",
           padding: isMobile ? "0.75rem 1rem" : "1rem 2rem",
           background: darkMode ? "#0f172a" : "white",
