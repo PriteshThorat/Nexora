@@ -639,31 +639,6 @@ function NewsSentimentWidget() {
                     position: "relative",
                   }}
                 >
-                  {/* Thumbnail */}
-                  {article.image_url && (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "170px",
-                        overflow: "hidden",
-                        background: theme.bg,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={article.image_url}
-                        alt=""
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          transition: "transform 0.4s ease",
-                          display: "block",
-                          transform: isHovered ? "scale(1.04)" : "scale(1)",
-                        }}
-                      />
-                    </div>
-                  )}
 
                   {/* Card content */}
                   <div

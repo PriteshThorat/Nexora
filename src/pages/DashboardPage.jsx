@@ -8,6 +8,7 @@ import SentimentNewsHeading from "../components/SentimentNewsHeading";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const WS_BASE_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8000";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ function DashboardPage() {
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [adviceError, setAdviceError] = useState("");
   const [userProfile, setUserProfile] = useState(null);
+  const [paymentUserProfile, setPaymentUserProfile] = useState(null);
+  const [paymentIncomeExpenses, setPaymentIncomeExpenses] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -28,6 +31,98 @@ function DashboardPage() {
       navigate("/login");
       return;
     }
+
+    // WebSocket connection & state
+    let walletSocket = null;
+    let wsRetryCount = 0;
+    const maxRetries = 3;
+    let setupAttempted = false;
+
+    // Setup WebSocket for real-time wallet updates
+    const setupWebSocket = (upiId) => {
+      if (!upiId || setupAttempted) {
+        console.log(
+          "Skipping WebSocket setup - upiId:",
+          upiId,
+          "setupAttempted:",
+          setupAttempted,
+        );
+        return;
+      }
+
+      setupAttempted = true;
+      const wsUrl = `${WS_BASE_URL}/ws/transactions?upiId=${encodeURIComponent(upiId)}`;
+      console.log("🔌 Setting up WebSocket connection for UPI ID:", upiId);
+      console.log("🔌 WebSocket URL:", wsUrl);
+
+      try {
+        walletSocket = new WebSocket(wsUrl);
+
+        walletSocket.onopen = () => {
+          console.log("✅ WebSocket connected successfully");
+          wsRetryCount = 0;
+
+          // Send heartbeat every 30 seconds
+          const pingInterval = setInterval(() => {
+            if (walletSocket?.readyState === WebSocket.OPEN) {
+              walletSocket.send("ping");
+            } else {
+              clearInterval(pingInterval);
+            }
+          }, 30000);
+        };
+
+        walletSocket.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            console.log("📨 WebSocket message received:", message);
+
+            if (
+              message.event === "transaction:incoming" &&
+              message.transaction
+            ) {
+              console.log("💰 Got transaction update:", message.transaction);
+              // Refresh the payment income/expenses
+              fetchPaymentIncomeExpenses();
+            } else if (
+              message.event === "wallet:update" &&
+              message.transaction
+            ) {
+              console.log("💰 Got wallet update:", message.transaction);
+              setPaymentIncomeExpenses(message.transaction);
+            }
+          } catch (error) {
+            if (event.data !== "pong") {
+              console.error("Error parsing WebSocket message:", error);
+            }
+          }
+        };
+
+        walletSocket.onerror = (error) => {
+          console.error("❌ WebSocket error:", error);
+        };
+
+        walletSocket.onclose = (event) => {
+          console.log("🔌 WebSocket disconnected:", {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+          });
+
+          // Attempt to reconnect
+          if (!event.wasClean && wsRetryCount < maxRetries) {
+            wsRetryCount++;
+            console.log(`⚡ Reconnecting... (${wsRetryCount}/${maxRetries})`);
+            setTimeout(() => {
+              setupAttempted = false;
+              setupWebSocket(upiId);
+            }, 2000 * wsRetryCount);
+          }
+        };
+      } catch (error) {
+        console.error("Error creating WebSocket:", error);
+      }
+    };
 
     // Fetch user profile
     const fetchUserProfile = async () => {
@@ -48,19 +143,90 @@ function DashboardPage() {
         }
       } catch (error) {
         console.error("Error fetching user profile:", error);
+      }
+    };
+
+    // Fetch payment user profile
+    const fetchPaymentUserProfile = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/payment-user-profile`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data.success && data.data) {
+          setPaymentUserProfile(data.data);
+          console.log("Payment user profile:", data.data);
+
+          // Setup WebSocket with the payment user's UPI ID
+          if (data.data.upiId) {
+            setTimeout(() => {
+              setupWebSocket(data.data.upiId);
+            }, 100);
+          }
+        } else {
+          console.log("Payment user profile not available:", data.error);
+        }
+      } catch (error) {
+        console.error("Error fetching payment user profile:", error);
+      }
+    };
+
+    // Fetch payment income and expenses
+    const fetchPaymentIncomeExpenses = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/payment-income-expenses`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data.success && data.data) {
+          setPaymentIncomeExpenses(data.data);
+          console.log("Payment income/expenses:", data.data);
+        } else {
+          console.log("Payment income/expenses not available");
+        }
+      } catch (error) {
+        console.error("Error fetching payment income/expenses:", error);
       } finally {
         setLoadingProfile(false);
       }
     };
 
+    // Kick off all fetches
     fetchUserProfile();
+    fetchPaymentUserProfile();
+    fetchPaymentIncomeExpenses();
 
+    // Resize handler
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (walletSocket) {
+        walletSocket.close();
+      }
+    };
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -904,6 +1070,8 @@ function DashboardPage() {
               >
                 <input
                   type="text"
+                  id="service-search"
+                  name="service-search"
                   placeholder="Search for services"
                   style={{
                     width: "100%",
@@ -1177,7 +1345,9 @@ function DashboardPage() {
                         color: theme.textSecondary,
                       }}
                     >
-                      A brief of your situation
+                      {paymentUserProfile
+                        ? "Your payment app balance"
+                        : "A brief of your situation"}
                     </div>
                   </div>
                   <span
@@ -1191,7 +1361,7 @@ function DashboardPage() {
                       fontWeight: "600",
                     }}
                   >
-                    New
+                    {paymentUserProfile ? "Active" : "New"}
                   </span>
                 </div>
 
@@ -1205,31 +1375,19 @@ function DashboardPage() {
                     }}
                   >
                     $
-                    {userProfile?.monthly_income
-                      ? parseFloat(userProfile.monthly_income).toLocaleString()
-                      : "0"}
-                    <span
-                      style={{
-                        fontSize: fontSize.md,
-                        color:
-                          userProfile?.monthly_income &&
-                          userProfile?.monthly_expenses
-                            ? parseFloat(userProfile.monthly_income) >
-                              parseFloat(userProfile.monthly_expenses)
-                              ? theme.success
-                              : "#ef4444"
-                            : theme.textSecondary,
-                        marginLeft: spacing.xs,
-                      }}
-                    >
-                      {userProfile?.monthly_income &&
-                      userProfile?.monthly_expenses
-                        ? parseFloat(userProfile.monthly_income) >
-                          parseFloat(userProfile.monthly_expenses)
-                          ? `+${(((parseFloat(userProfile.monthly_income) - parseFloat(userProfile.monthly_expenses)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
-                          : `-${(((parseFloat(userProfile.monthly_expenses) - parseFloat(userProfile.monthly_income)) / parseFloat(userProfile.monthly_income)) * 100).toFixed(1)}%`
-                        : ""}
-                    </span>
+                    {paymentUserProfile
+                      ? parseFloat(paymentUserProfile.balance).toLocaleString(
+                          "en-US",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )
+                      : userProfile?.monthly_income
+                        ? parseFloat(
+                            userProfile.monthly_income,
+                          ).toLocaleString()
+                        : "0"}
                   </div>
                   {/* Simple chart line */}
                   <svg
@@ -1259,9 +1417,22 @@ function DashboardPage() {
                 >
                   <div>
                     <span style={{ fontWeight: "700", color: theme.text }}>
-                      {userProfile?.monthly_income
-                        ? parseFloat(userProfile.monthly_income).toFixed(0)
-                        : "0"}
+                      $
+                      {paymentIncomeExpenses
+                        ? parseFloat(
+                            paymentIncomeExpenses.income,
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })
+                        : userProfile?.monthly_income
+                          ? parseFloat(
+                              userProfile.monthly_income,
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
+                          : "0"}
                     </span>
                     <span
                       style={{ color: theme.textSecondary, marginLeft: "4px" }}
@@ -1271,50 +1442,27 @@ function DashboardPage() {
                   </div>
                   <div>
                     <span style={{ fontWeight: "700", color: theme.text }}>
-                      {userProfile?.monthly_expenses
-                        ? parseFloat(userProfile.monthly_expenses).toFixed(0)
-                        : "0"}
+                      $
+                      {paymentIncomeExpenses
+                        ? parseFloat(
+                            paymentIncomeExpenses.expenses,
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })
+                        : userProfile?.monthly_expenses
+                          ? parseFloat(
+                              userProfile.monthly_expenses,
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
+                          : "0"}
                     </span>
                     <span
                       style={{ color: theme.textSecondary, marginLeft: "4px" }}
                     >
                       Expenses
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "12px",
-                        height: "12px",
-                        borderRadius: "50%",
-                        background:
-                          userProfile?.risk_tolerance === "high"
-                            ? "#ef4444"
-                            : userProfile?.risk_tolerance === "medium"
-                              ? "#f59e0b"
-                              : "#10b981",
-                        display: "inline-block",
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontWeight: "700",
-                        color: theme.text,
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {userProfile?.risk_tolerance || "N/A"}
-                    </span>
-                    <span
-                      style={{ color: theme.textSecondary, marginLeft: "2px" }}
-                    >
-                      Risk
                     </span>
                   </div>
                 </div>

@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import axios from "axios";
+import { setUserProfile } from "../store/userSlice";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("signup");
   const [formData, setFormData] = useState({
     username: "",
@@ -44,8 +47,21 @@ const RegisterPage = () => {
       // Registration successful
       console.log("Registration successful:", response.data);
 
-      // Redirect to login page
-      navigate("/login");
+      // Store token and user info
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("username", response.data.user.username);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Store user profile in Redux
+      dispatch(setUserProfile(response.data.user));
+
+      // Get flags from response (new users will have both as false)
+      const hasFinancialProfile = response.data.has_financial_profile || false;
+      const hasBankAccount = response.data.has_bank_account || false;
+
+      // Redirect to financial profile for new users
+      console.log("Redirecting new user to financial profile...");
+      navigate("/financial-profile");
     } catch (err) {
       console.error("Registration error:", err);
       if (err.response?.data) {

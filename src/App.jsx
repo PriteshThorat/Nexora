@@ -8,6 +8,7 @@ import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import FinancialProfilePage from "./pages/FinancialProfilePage";
+import BankConnectionPage from "./pages/BankConnectionPage";
 import DashboardPage from "./pages/DashboardPage";
 import ChatbotPage from "./pages/ChatbotPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -34,6 +35,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/financial-profile" element={<FinancialProfilePage />} />
+        <Route path="/bank-connection" element={<BankConnectionPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
         <Route path="/profile" element={<ProfilePage />} />

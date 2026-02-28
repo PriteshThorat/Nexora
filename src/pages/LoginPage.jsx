@@ -51,15 +51,22 @@ const LoginPage = () => {
       // Store user profile in Redux
       dispatch(setUserProfile(response.data.user));
 
-      // Check if user has completed their financial profile
-      const hasFinancialProfile =
-        response.data.user.has_financial_profile || false;
+      // Check completion status from backend flags
+      const hasFinancialProfile = response.data.has_financial_profile || false;
+      const hasBankAccount = response.data.has_bank_account || false;
 
+      // Redirect based on completion status
       if (!hasFinancialProfile) {
-        // First time login - redirect to financial profile
+        // User needs to fill financial profile first
+        console.log("Redirecting to financial profile...");
         navigate("/financial-profile");
+      } else if (hasFinancialProfile && !hasBankAccount) {
+        // User has financial profile but hasn't connected bank account
+        console.log("Redirecting to bank connection...");
+        navigate("/bank-connection");
       } else {
-        // Profile already complete - go to dashboard
+        // User has completed both - go to dashboard
+        console.log("Redirecting to dashboard...");
         localStorage.setItem("profileComplete", "true");
         navigate("/dashboard");
       }

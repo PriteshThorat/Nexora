@@ -20,7 +20,24 @@ function ProfilePage() {
   const error = useSelector((state) => state.user.error);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
 
+  // Initialize with localStorage data if available
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser && !userProfile) {
+      try {
+        const user = JSON.parse(storedUser);
+        console.log("Initializing with localStorage user:", user);
+        dispatch(setUserProfile(user));
+      } catch (e) {
+        console.error("Error parsing stored user:", e);
+      }
+    }
+  }, []);
+
+  // Fetch fresh profile data from server
   useEffect(() => {
     const fetchUserProfile = async () => {
       const token = localStorage.getItem("token");
@@ -29,7 +46,7 @@ function ProfilePage() {
         return;
       }
 
-      dispatch(setLoading(true));
+      setIsFetching(true);
 
       try {
         const response = await fetch(
@@ -45,20 +62,25 @@ function ProfilePage() {
 
         if (response.ok) {
           const data = await response.json();
+          console.log("Fetched fresh profile data:", data);
           dispatch(setUserProfile(data));
+          localStorage.setItem("user", JSON.stringify(data));
+          dispatch(setError(null));
         } else {
-          dispatch(setError("Failed to fetch profile"));
+          console.error("Profile fetch failed with status:", response.status);
+          dispatch(setError("Failed to load profile"));
         }
       } catch (err) {
+        console.error("Profile fetch error:", err);
         dispatch(setError("Network error. Please try again."));
+      } finally {
+        dispatch(setLoading(false));
+        setIsFetching(false);
       }
     };
 
-    // Only fetch if profile is not already in Redux
-    if (!userProfile) {
-      fetchUserProfile();
-    }
-  }, [navigate, dispatch, userProfile]);
+    fetchUserProfile();
+  }, [navigate, dispatch, refreshKey]);
 
   const spacing = {
     xs: "0.5rem",
@@ -94,6 +116,7 @@ function ProfilePage() {
   };
 
   const handleEditClick = (fieldName, currentValue) => {
+    console.log("Edit clicked for:", fieldName, "Current value:", currentValue);
     setEditingField(fieldName);
     setEditValue(currentValue || "");
   };
@@ -106,7 +129,12 @@ function ProfilePage() {
     }
 
     try {
-      const updateData = { ...userProfile, [fieldName]: editValue };
+      // Send ONLY the field being updated, not the entire profile
+      const updateData = {
+        [fieldName]: editValue
+      };
+
+      console.log("Saving field:", fieldName, "Value:", editValue);
 
       const response = await fetch(
         `${API_BASE_URL}/api/users/financial_profile_update/`,
@@ -122,13 +150,23 @@ function ProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("Save successful, updated data:", data);
+        // Update Redux store
         dispatch(setUserProfile(data));
+        // Also update localStorage for persistence
+        localStorage.setItem("user", JSON.stringify(data));
         setEditingField(null);
         setEditValue("");
+        dispatch(setError(null)); // Clear any errors
+        // Trigger a refresh to get fresh data from server
+        setRefreshKey(prev => prev + 1);
       } else {
-        dispatch(setError("Failed to update profile"));
+        const errorData = await response.json();
+        console.error("Save failed:", errorData);
+        dispatch(setError(errorData.message || "Failed to update profile"));
       }
     } catch (err) {
+      console.error("Save error:", err);
       dispatch(setError("Network error. Please try again."));
     }
   };
@@ -257,31 +295,38 @@ function ProfilePage() {
             }}
           >
             {fieldOptions ? (
-              <select
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                autoFocus
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  fontSize: fontSize.sm,
-                  fontWeight: "500",
-                  color: theme.text,
-                  background: theme.cardBg,
-                  border: `2px solid ${theme.accent}`,
-                  borderRadius: "8px",
-                  fontFamily: "'Roboto Mono', monospace",
-                  outline: "none",
-                  cursor: "pointer",
-                  minHeight: "42px",
-                }}
-              >
-                {fieldOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={editValue}
+                  onChange={(e) => {
+                    console.log("Select changed to:", e.target.value);
+                    setEditValue(e.target.value);
+                  }}
+                  autoFocus
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    fontSize: fontSize.sm,
+                    fontWeight: "500",
+                    color: theme.text,
+                    background: theme.cardBg,
+                    border: `2px solid ${theme.accent}`,
+                    borderRadius: "8px",
+                    fontFamily: "'Roboto Mono', monospace",
+                    outline: "none",
+                    cursor: "pointer",
+                    minHeight: "42px",
+                  }}
+                >
+                  <option value="">-- Select an option --</option>
+                  {fieldOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {!editValue && <p style={{ fontSize: fontSize.xs, color: theme.warning, marginTop: "4px" }}>Required field</p>}
+              </>
             ) : (
               <input
                 type="text"
@@ -306,16 +351,19 @@ function ProfilePage() {
             <div style={{ display: "flex", gap: spacing.xs }}>
               <button
                 onClick={() => handleSaveField(fieldName)}
+                disabled={fieldOptions && !editValue}
                 style={{
                   padding: "8px 16px",
-                  background: theme.success,
+                  background: fieldOptions && !editValue ? "#999" : theme.success,
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   fontSize: fontSize.xs,
                   fontWeight: "600",
-                  cursor: "pointer",
+                  cursor: fieldOptions && !editValue ? "not-allowed" : "pointer",
+                  opacity: fieldOptions && !editValue ? 0.6 : 1,
                 }}
+                title={fieldOptions && !editValue ? "Please select an option" : ""}
               >
                 Save
               </button>
@@ -345,14 +393,14 @@ function ProfilePage() {
               fontFamily: "'Roboto Mono', monospace",
             }}
           >
-            {value || "Not set"}
+            {value !== null && value !== undefined ? value : "Not set"}
           </div>
         )}
       </div>
     );
   };
 
-  if (loading) {
+  if (loading && !userProfile) {
     return (
       <>
         <Header />
@@ -382,7 +430,7 @@ function ProfilePage() {
     );
   }
 
-  if (error) {
+  if (error && !userProfile) {
     return (
       <>
         <Header />
@@ -684,13 +732,13 @@ function ProfilePage() {
                   value={
                     userProfile?.average_transaction_amount
                       ? `$${parseFloat(userProfile.average_transaction_amount).toLocaleString()}`
-                      : null
+                      : "$0"
                   }
                   fieldName="average_transaction_amount"
                 />
                 <InfoCard
                   label="Transaction Frequency"
-                  value={userProfile?.transaction_frequency}
+                  value={userProfile?.transaction_frequency ?? 0}
                   fieldName="transaction_frequency"
                 />
               </div>

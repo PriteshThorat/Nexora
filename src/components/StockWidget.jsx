@@ -475,6 +475,20 @@ function StockWidget() {
       .then((data) => setWatchedStocks(data.watched_stocks || []));
   }, [token]);
 
+  // Notify SentimentNewsHeading when watched stocks change (after render, not during)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent("watchedStocksChanged", {
+        detail: { watchedStocks },
+      }),
+    );
+  }, [watchedStocks]);
+
   // Tick/untick handlers
   const handleTick = async (symbol) => {
     if (!token) {
@@ -495,15 +509,7 @@ function StockWidget() {
         },
       );
       if (response.ok) {
-        setWatchedStocks((prev) => {
-          const updated = [...new Set([...prev, symbol])];
-          window.dispatchEvent(
-            new CustomEvent("watchedStocksChanged", {
-              detail: { watchedStocks: updated },
-            }),
-          );
-          return updated;
-        });
+        setWatchedStocks((prev) => [...new Set([...prev, symbol])]);
       } else {
         console.error("Failed to tick stock:", response.statusText);
       }
@@ -533,15 +539,7 @@ function StockWidget() {
         },
       );
       if (response.ok) {
-        setWatchedStocks((prev) => {
-          const updated = prev.filter((s) => s !== symbol);
-          window.dispatchEvent(
-            new CustomEvent("watchedStocksChanged", {
-              detail: { watchedStocks: updated },
-            }),
-          );
-          return updated;
-        });
+        setWatchedStocks((prev) => prev.filter((s) => s !== symbol));
       } else {
         console.error("Failed to untick stock:", response.statusText);
       }
