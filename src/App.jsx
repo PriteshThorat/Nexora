@@ -9,9 +9,11 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import FinancialProfilePage from "./pages/FinancialProfilePage";
 import BankConnectionPage from "./pages/BankConnectionPage";
+import BankAccountsPage from "./pages/BankAccountsPage";
 import DashboardPage from "./pages/DashboardPage";
 import ChatbotPage from "./pages/ChatbotPage";
 import ProfilePage from "./pages/ProfilePage";
+import TransactionPage from "./pages/TransactionPage";
 
 function App() {
   const darkMode = useSelector((state) => state.theme.darkMode);
@@ -36,7 +38,9 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/financial-profile" element={<FinancialProfilePage />} />
         <Route path="/bank-connection" element={<BankConnectionPage />} />
+        <Route path="/bank-accounts" element={<BankAccountsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/transactions" element={<TransactionPage />} />
         <Route path="/chatbot" element={<ChatbotPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
