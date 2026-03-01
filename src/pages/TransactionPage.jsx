@@ -121,13 +121,16 @@ function TransactionPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/transactions/connected-bank`, {
-        method: "GET",
-        headers: {
-          Authorization: `Token ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/transactions/connected-bank`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -353,6 +356,7 @@ function TransactionPage() {
                         style={{
                           color: theme.text,
                           fontSize: fontSize.sm,
+                          marginBottom: spacing.xs,
                         }}
                       >
                         {txn.type === "sent"
@@ -365,6 +369,9 @@ function TransactionPage() {
                           fontSize: fontSize.xs,
                         }}
                       >
+                        <span style={{ fontWeight: "500", marginRight: "4px" }}>
+                          UPI ID:
+                        </span>
                         {txn.type === "sent"
                           ? txn.receiver_upi_id
                           : txn.sender_upi_id}
@@ -479,7 +486,17 @@ function TransactionPage() {
                         fontWeight: "600",
                       }}
                     >
-                      UPI ID
+                      Sender UPI ID
+                    </th>
+                    <th
+                      style={{
+                        padding: spacing.md,
+                        textAlign: "left",
+                        color: theme.textSecondary,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Receiver UPI ID
                     </th>
                     <th
                       style={{
@@ -570,11 +587,20 @@ function TransactionPage() {
                           padding: spacing.md,
                           color: theme.textSecondary,
                           fontFamily: "monospace",
+                          fontSize: fontSize.xs,
                         }}
                       >
-                        {txn.type === "sent"
-                          ? txn.receiver_upi_id
-                          : txn.sender_upi_id}
+                        {txn.sender_upi_id}
+                      </td>
+                      <td
+                        style={{
+                          padding: spacing.md,
+                          color: theme.textSecondary,
+                          fontFamily: "monospace",
+                          fontSize: fontSize.xs,
+                        }}
+                      >
+                        {txn.receiver_upi_id}
                       </td>
                       <td
                         style={{

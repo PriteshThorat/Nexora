@@ -776,38 +776,17 @@ function DashboardPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: spacing.sm,
-                  justifyContent: "space-between",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing.sm,
-                  }}
-                >
-                  <span style={{ fontSize: "1.25rem" }}></span>
-                  <span
-                    style={{
-                      color: theme.textSecondary,
-                      fontSize: fontSize.sm,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Profile
-                  </span>
-                </div>
+                <span style={{ fontSize: "1.25rem" }}></span>
                 <span
                   style={{
-                    background: theme.accent,
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "600",
+                    color: theme.textSecondary,
+                    fontSize: fontSize.sm,
+                    fontWeight: "500",
                   }}
                 >
-                  2
+                  Profile
                 </span>
               </div>
               <div
@@ -845,7 +824,7 @@ function DashboardPage() {
                   gap: spacing.sm,
                 }}
               >
-                <span style={{ fontSize: "1.25rem" }}>🏦</span>
+                <span style={{ fontSize: "1.25rem" }}></span>
                 <span
                   style={{
                     color: theme.textSecondary,
