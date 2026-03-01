@@ -85,6 +85,47 @@ function DashboardPage() {
               console.log("💰 Got transaction update:", message.transaction);
               // Refresh the payment income/expenses
               fetchPaymentIncomeExpenses();
+
+              // Add new transaction to recent transactions list (avoid duplicates)
+              setRecentTransactions((prevTransactions) => {
+                // Check if transaction already exists by transaction_id
+                const transactionExists = prevTransactions.some(
+                  (txn) =>
+                    txn.transaction_id === message.transaction.transaction_id,
+                );
+
+                if (transactionExists) {
+                  console.log(
+                    "📊 Transaction already exists, skipping duplicate:",
+                    message.transaction.transaction_id,
+                  );
+                  return prevTransactions;
+                }
+
+                // Add new transaction and deduplicate entire list
+                const allTransactions = [
+                  message.transaction,
+                  ...prevTransactions,
+                ];
+
+                // Remove duplicates by transaction_id
+                const seenIds = new Set();
+                const uniqueTransactions = allTransactions.filter((txn) => {
+                  if (seenIds.has(txn.transaction_id)) {
+                    return false;
+                  }
+                  seenIds.add(txn.transaction_id);
+                  return true;
+                });
+
+                // Keep only latest 5
+                const limitedTransactions = uniqueTransactions.slice(0, 5);
+                console.log(
+                  "📊 Updated recent transactions:",
+                  limitedTransactions,
+                );
+                return limitedTransactions;
+              });
             } else if (
               message.event === "wallet:update" &&
               message.transaction
@@ -229,8 +270,17 @@ function DashboardPage() {
         console.log("📊 Response Status:", response.status, response.ok);
 
         if (response.ok && data.results) {
-          setRecentTransactions(data.results);
-          console.log("✅ Recent transactions set:", data.results);
+          // Deduplicate transactions by transaction_id
+          const uniqueTransactions = [];
+          const seenIds = new Set();
+          for (const txn of data.results) {
+            if (!seenIds.has(txn.transaction_id)) {
+              uniqueTransactions.push(txn);
+              seenIds.add(txn.transaction_id);
+            }
+          }
+          setRecentTransactions(uniqueTransactions);
+          console.log("✅ Recent transactions set:", uniqueTransactions);
         } else {
           console.log(
             "❌ Failed to fetch recent transactions - Response not ok or no results",
@@ -1317,10 +1367,7 @@ function DashboardPage() {
                       }}
                     >
                       {recentTransactions.map((transaction, index) => {
-                        const currentUsername =
-                          localStorage.getItem("username");
-                        const isSent =
-                          transaction.sender?.username === currentUsername;
+                        const isSent = transaction.type === "sent";
 
                         return (
                           <div
@@ -1344,8 +1391,8 @@ function DashboardPage() {
                                 }}
                               >
                                 {isSent
-                                  ? `To ${transaction.receiver?.username || "Unknown"}`
-                                  : `From ${transaction.sender?.username || "Unknown"}`}
+                                  ? `To ${transaction.receiver_name || "Unknown"}`
+                                  : `From ${transaction.sender_name || "Unknown"}`}
                               </div>
                               <div
                                 style={{
