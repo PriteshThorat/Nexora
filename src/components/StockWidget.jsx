@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Chart, registerables } from "chart.js";
+import StockPredictionModal from "./StockPredictionModal";
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -360,8 +361,13 @@ function StockCard({ symbol }) {
       </div>
 
       {/* Mini Chart */}
-      <div style={{ height: "80px", marginBottom: "1rem" }}>
-        <canvas ref={chartRef}></canvas>
+      <div
+        style={{ height: "80px", marginBottom: "1rem", position: "relative" }}
+      >
+        <canvas
+          ref={chartRef}
+          style={{ display: "block", width: "100%", height: "100%" }}
+        ></canvas>
       </div>
 
       {/* Price Information */}
@@ -430,6 +436,11 @@ function StockWidget() {
   // Watched stocks state
   const [watchedStocks, setWatchedStocks] = useState([]);
   const [loadingTick, setLoadingTick] = useState(null);
+  // Stock prediction modal state
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [selectedStockForPrediction, setSelectedStockForPrediction] =
+    useState(null);
+  const [cardRect, setCardRect] = useState(null);
   // Store all available symbols in frontend
   const ALL_SYMBOLS = [
     "AAPL",
@@ -554,8 +565,36 @@ function StockWidget() {
   function StockCardWithTick({ symbol }) {
     const isWatched = watchedStocks.includes(symbol);
     const isLoading = loadingTick === symbol;
+    const [hoverTimeout, setHoverTimeout] = useState(null);
+    const cardRef = useRef(null);
+
+    const handleMouseEnter = () => {
+      // Show prediction modal after 500ms hover
+      const timeout = setTimeout(() => {
+        if (cardRef.current) {
+          setSelectedStockForPrediction(symbol);
+          setCardRect(cardRef.current.getBoundingClientRect());
+          setShowPredictionModal(true);
+        }
+      }, 500);
+      setHoverTimeout(timeout);
+    };
+
+    const handleMouseLeave = () => {
+      // Clear timeout if user leaves before 500ms
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        setHoverTimeout(null);
+      }
+    };
+
     return (
-      <div style={{ position: "relative" }}>
+      <div
+        ref={cardRef}
+        style={{ position: "relative" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <StockCard symbol={symbol} />
         <button
           onClick={() =>
@@ -589,22 +628,7 @@ function StockWidget() {
   return (
     <div style={{ marginBottom: "2rem" }}>
       {/* Section Header */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h2
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "700",
-            color: theme.text,
-            marginBottom: "0.5rem",
-            fontFamily: "'Roboto Mono', monospace",
-          }}
-        >
-          📈 Market Watch
-        </h2>
-        <p style={{ fontSize: "0.875rem", color: theme.textSecondary }}>
-          Real-time stock prices • Auto-refreshes every 5 minutes
-        </p>
-      </div>
+      <div style={{ marginBottom: "1.5rem" }}></div>
 
       {/* Search Input with Dropdown */}
       <div style={{ marginBottom: "1.5rem", position: "relative" }}>
@@ -742,6 +766,18 @@ function StockWidget() {
           </p>
         )}
       </div>
+
+      {/* Stock Prediction Modal */}
+      <StockPredictionModal
+        ticker={selectedStockForPrediction}
+        isOpen={showPredictionModal}
+        cardRect={cardRect}
+        onClose={() => {
+          setShowPredictionModal(false);
+          setSelectedStockForPrediction(null);
+          setCardRect(null);
+        }}
+      />
     </div>
   );
 }

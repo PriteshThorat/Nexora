@@ -5,6 +5,9 @@ import { toggleDarkMode } from "../store/themeSlice";
 import StockWidget from "../components/StockWidget";
 import NewsSentimentWidget from "../components/NewsSentimentWidget";
 import SentimentNewsHeading from "../components/SentimentNewsHeading";
+import FraudDetectionWidget from "../components/FraudDetectionWidget";
+import CreditRiskWidget from "../components/CreditRiskWidget";
+import FinancialAdvisorWidget from "../components/FinancialAdvisorWidget";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -16,6 +19,8 @@ function DashboardPage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const darkMode = useSelector((state) => state.theme.darkMode);
   const [showAdviceModal, setShowAdviceModal] = useState(false);
+  const [showCreditRisk, setShowCreditRisk] = useState(false);
+  const [showFinancialAdvisor, setShowFinancialAdvisor] = useState(false);
   const [financialAdvice, setFinancialAdvice] = useState(null);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [adviceError, setAdviceError] = useState("");
@@ -241,6 +246,32 @@ function DashboardPage() {
         if (response.ok && data.success && data.data) {
           setPaymentIncomeExpenses(data.data);
           console.log("Payment income/expenses:", data.data);
+
+          // Update financial profile with latest income/expenses from payment app
+          try {
+            const updateResponse = await fetch(
+              `${API_BASE_URL}/api/users/financial_profile_update/`,
+              {
+                method: "PATCH",
+                headers: {
+                  Authorization: `Token ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  monthly_income: data.data.income,
+                  monthly_expenses: data.data.expenses,
+                }),
+              },
+            );
+
+            if (updateResponse.ok) {
+              console.log("Financial profile updated with payment app data");
+            } else {
+              console.error("Failed to update financial profile");
+            }
+          } catch (updateError) {
+            console.error("Error updating financial profile:", updateError);
+          }
         } else {
           console.log("Payment income/expenses not available");
         }
@@ -674,57 +705,7 @@ function DashboardPage() {
     sentValue: "$17.5M",
   };
 
-  const quickActions = [
-    {
-      title: "Financial Advisor",
-      description: "Get personalized financial advice",
-      icon: "",
-      onClick: handleGetFinancialAdvice,
-      color: "#f59e0b",
-    },
-    {
-      title: "AI Financial Advisor",
-      description: "Chat with AI advisor",
-      icon: "",
-      path: "/chatbot",
-      color: theme.accent,
-    },
-    {
-      title: "Stock Predictions",
-      description: "View AI-powered stock forecasts",
-      icon: "",
-      path: "/features",
-      color: theme.success,
-    },
-    {
-      title: "Credit Risk Analysis",
-      description: "Assess your creditworthiness",
-      icon: "",
-      path: "/features",
-      color: theme.warning,
-    },
-    {
-      title: "Fraud Detection",
-      description: "Monitor suspicious activities",
-      icon: "",
-      path: "/features",
-      color: theme.danger,
-    },
-    {
-      title: "Sentiment Analysis",
-      description: "Market sentiment insights",
-      icon: "",
-      path: "/features",
-      color: "#8b5cf6",
-    },
-    {
-      title: "Portfolio Manager",
-      description: "Manage your investments",
-      icon: "",
-      path: "/features",
-      color: "#ec4899",
-    },
-  ];
+  const quickActions = [];
 
   const recentActivities = [
     {
@@ -743,6 +724,30 @@ function DashboardPage() {
 
   return (
     <>
+      {/* Floating Fraud Detection Widget */}
+      {recentTransactions && recentTransactions.length > 0 && (
+        <FraudDetectionWidget
+          transactions={recentTransactions}
+          userProfile={userProfile}
+          onNewTransaction={(callback) => {
+            // Listen for new transactions via websocket
+            return () => {}; // Unsubscribe function
+          }}
+        />
+      )}
+
+      {/* Credit Risk Assessment Widget */}
+      <CreditRiskWidget
+        isVisible={showCreditRisk}
+        onClose={() => setShowCreditRisk(false)}
+      />
+
+      {/* Financial Advisor Widget */}
+      <FinancialAdvisorWidget
+        isVisible={showFinancialAdvisor}
+        onClose={() => setShowFinancialAdvisor(false)}
+      />
+
       <div
         style={{
           minHeight: "100vh",
@@ -885,6 +890,29 @@ function DashboardPage() {
                   Bank Accounts
                 </span>
               </div>
+              <div
+                onClick={() => setShowFinancialAdvisor(true)}
+                style={{
+                  borderRadius: "8px",
+                  padding: spacing.sm,
+                  marginBottom: spacing.xs,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: spacing.sm,
+                }}
+              >
+                <span style={{ fontSize: "1.25rem" }}></span>
+                <span
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: fontSize.sm,
+                    fontWeight: "500",
+                  }}
+                >
+                  Financial Advisor
+                </span>
+              </div>
             </nav>
 
             {/* User Profile */}
@@ -947,6 +975,8 @@ function DashboardPage() {
             minWidth: 0,
             maxWidth: "100%",
             overflowX: "hidden",
+            overflowY: "auto",
+            maxHeight: "100vh",
             marginLeft: isMobile ? 0 : "240px",
             padding: isMobile ? spacing.sm : spacing.lg,
             paddingTop: isMobile ? 0 : spacing.lg,
@@ -1077,12 +1107,15 @@ function DashboardPage() {
               style={{
                 display: "flex",
                 flexDirection: isMobile ? "column" : "row",
-                justifyContent: "flex-end",
+                justifyContent: "space-between",
                 alignItems: isMobile ? "stretch" : "center",
                 gap: isMobile ? spacing.sm : spacing.lg,
                 marginBottom: spacing.lg,
               }}
             >
+              {/* Ticker - Left Side */}
+              {!isMobile && <SentimentNewsHeading />}
+
               <div
                 style={{
                   display: "flex",
@@ -1168,11 +1201,21 @@ function DashboardPage() {
             >
               {/* Wallet View Card */}
               <div
+                onMouseEnter={(e) => {
+                  setShowCreditRisk(true);
+                  e.currentTarget.style.border = `1px solid ${theme.accent}`;
+                }}
+                onMouseLeave={(e) => {
+                  setShowCreditRisk(false);
+                  e.currentTarget.style.border = `1px solid ${theme.border}`;
+                }}
                 style={{
                   background: theme.cardBg,
                   borderRadius: "16px",
                   padding: spacing.lg,
                   border: `1px solid ${theme.border}`,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
                 }}
               >
                 <div
@@ -1196,7 +1239,11 @@ function DashboardPage() {
                       fontSize: "1.25rem",
                     }}
                   ></div>
-                  <div>
+                  <div
+                    style={{
+                      flex: 1,
+                    }}
+                  >
                     <div
                       style={{
                         fontSize: fontSize.sm,
@@ -1506,9 +1553,6 @@ function DashboardPage() {
                 </div>
               ))}
             </div>
-
-            {/* Breaking News Heading */}
-            <SentimentNewsHeading />
 
             {/* Stock Widget */}
             <NewsSentimentWidget />

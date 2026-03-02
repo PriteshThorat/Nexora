@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { cacheSentiment } from "../store/sentimentCacheSlice";
+import {
+  setCachedSentimentAnalysis,
+  setCachedNewsSentiment,
+} from "../store/aiAnalysisSlice";
+import { useInFlightRequests } from "../hooks/useInFlightRequests";
+import { useFormatAIResponse } from "../hooks/useFormatAIResponse";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -9,8 +14,16 @@ const DEFAULT_STOCKS = ["AAPL", "MSFT", "GOOGL", "TSLA", "AMZN"];
 
 function NewsSentimentWidget() {
   const darkMode = useSelector((state) => state.theme.darkMode);
-  const sentimentCache = useSelector((state) => state.sentimentCache.cache);
+  const sentimentAnalysisCache = useSelector(
+    (state) => state.aiAnalysis.sentimentAnalysis,
+  );
+  const newsSentimentCache = useSelector(
+    (state) => state.aiAnalysis.newsSentiment,
+  );
+  const cacheExpiry = useSelector((state) => state.aiAnalysis.cacheExpiry);
   const dispatch = useDispatch();
+  const { makeCachedRequest } = useInFlightRequests();
+  const { formatPrediction } = useFormatAIResponse();
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,25 +105,51 @@ function NewsSentimentWidget() {
         const stocksToFetch =
           watchedStocks.length > 0 ? watchedStocks.slice(0, 5) : DEFAULT_STOCKS;
 
-        const newsPromises = stocksToFetch.map((ticker) =>
-          fetch(
-            `${API_BASE_URL.replace(/\/$/, "")}/api/news-sentiment/?ticker=${encodeURIComponent(ticker)}&output_format=full`,
-            {
-              headers: {
-                Authorization: `Token ${localStorage.getItem("token")}`,
+        // Create a small delay to allow cache population from other components
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const newsPromises = stocksToFetch.map((ticker) => {
+          // Check if news is cached for this ticker
+          const cached = (newsSentimentCache || {})[ticker];
+          if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+            console.log(`✓ Using cached news for ${ticker}`);
+            return Promise.resolve(cached.data);
+          }
+
+          // Fetch if not cached
+          return makeCachedRequest(`news-${ticker}`, async () => {
+            const res = await fetch(
+              `${API_BASE_URL.replace(/\/$/, "")}/api/news-sentiment/?ticker=${encodeURIComponent(ticker)}&output_format=full`,
+              {
+                headers: {
+                  Authorization: `Token ${token}`,
+                },
               },
-            },
-          )
-            .then((res) => res.json())
-            .catch(() => null),
-        );
+            );
+            if (!res.ok) {
+              throw new Error(`News API failed: ${res.status}`);
+            }
+            const result = await res.json();
+            if (!result) {
+              throw new Error("Empty response from news API");
+            }
+            // Store in cache
+            dispatch(setCachedNewsSentiment({ ticker, data: result }));
+            return result;
+          }).catch((err) => {
+            console.warn(`Failed to fetch news for ${ticker}:`, err);
+            return null;
+          });
+        });
 
         const results = await Promise.all(newsPromises);
+        console.log("📰 Raw API results:", results);
         const allNews = [];
         const seenTitles = new Set();
 
         results.forEach((result) => {
           if (result && result.data && result.data.feed) {
+            console.log(`📰 Found ${result.data.feed.length} articles`);
             result.data.feed.forEach((article) => {
               if (!seenTitles.has(article.title)) {
                 seenTitles.add(article.title);
@@ -134,6 +173,7 @@ function NewsSentimentWidget() {
         allNews.sort(
           (a, b) => new Date(b.published_at) - new Date(a.published_at),
         );
+        console.log(`📰 Final news count: ${allNews.length}`);
         setNews(allNews.slice(0, 6));
       } catch (err) {
         console.error("Error fetching news:", err);
@@ -155,6 +195,16 @@ function NewsSentimentWidget() {
     }
   };
 
+  const hashHeadline = (text) => {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  };
+
   const handleHoverEnter = async (article, idx, e) => {
     cancelHideTimeout();
     activeHoverRef.current = idx;
@@ -163,9 +213,11 @@ function NewsSentimentWidget() {
     setHoverError(null);
 
     // Return cached result immediately (from Redux persistent cache)
-    const cacheKey = article.title;
-    if (sentimentCache[cacheKey]) {
-      setHoveredAnalysis(sentimentCache[cacheKey]);
+    const headlineHash = hashHeadline(article.title);
+    const cached = sentimentAnalysisCache[headlineHash];
+
+    if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+      setHoveredAnalysis(cached.data);
       setLoadingHover(false);
       return;
     }
@@ -174,37 +226,51 @@ function NewsSentimentWidget() {
     setLoadingHover(true);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setHoverError("Not authenticated");
-        setLoadingHover(false);
-        return;
-      }
+      const data = await makeCachedRequest(
+        `sentiment-${headlineHash}`,
+        async () => {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Not authenticated");
+          }
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/agents/sentiment_analysis/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ news_text: article.title }),
+          const res = await fetch(
+            `${API_BASE_URL}/api/agents/sentiment_analysis/`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Token ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ news_text: article.title }),
+            },
+          );
+
+          if (res.ok) {
+            const result = await res.json();
+            dispatch(
+              setCachedSentimentAnalysis({ headlineHash, data: result }),
+            );
+            return result;
+          } else {
+            throw new Error("Analysis unavailable");
+          }
         },
       );
 
       // Guard: discard result if hover has already moved to a different card
       if (activeHoverRef.current !== idx) return;
 
-      if (res.ok) {
-        const data = await res.json();
-        dispatch(cacheSentiment({ key: article.title, data }));
-        setHoveredAnalysis(data);
-      } else {
-        setHoverError("Analysis unavailable");
-      }
+      setHoveredAnalysis(data);
     } catch (e) {
-      if (activeHoverRef.current === idx) setHoverError(e.message || "Error");
+      if (activeHoverRef.current === idx) {
+        if (e.message.includes("quota") || e.message.includes("429")) {
+          setHoverError("Daily limit reached. Try again later.");
+        } else {
+          const msg = e.message || "Error";
+          setHoverError(msg.length > 60 ? msg.substring(0, 57) + "..." : msg);
+        }
+      }
     } finally {
       if (activeHoverRef.current === idx) setLoadingHover(false);
     }
@@ -289,6 +355,19 @@ function NewsSentimentWidget() {
           @keyframes nsw-spin {
             to { transform: rotate(360deg); }
           }
+          .nsw-tooltip-body::-webkit-scrollbar {
+            width: 12px;
+          }
+          .nsw-tooltip-body::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .nsw-tooltip-body::-webkit-scrollbar-thumb {
+            background: rgb(102, 126, 234);
+            border-radius: 6px;
+          }
+          .nsw-tooltip-body::-webkit-scrollbar-thumb:hover {
+            background: rgb(92, 116, 224);
+          }
         `}</style>
 
         {/* Fixed overlay spanning content area (excluding sidebar) */}
@@ -307,13 +386,16 @@ function NewsSentimentWidget() {
         >
           {/* Speech-bubble body — full width */}
           <div
+            className="nsw-tooltip-body"
             style={{
               background: bg,
               backdropFilter: "blur(28px)",
               WebkitBackdropFilter: "blur(28px)",
               border: `1px solid ${borderColor}`,
               borderRadius: "14px",
-              overflow: "hidden",
+              overflowY: "scroll",
+              overflowX: "hidden",
+              maxHeight: "400px",
               boxShadow: shadow,
             }}
           >
@@ -340,7 +422,7 @@ function NewsSentimentWidget() {
                   fontFamily: "'Roboto Mono', monospace",
                 }}
               >
-                📊 AI Sentiment
+                AI Sentiment
               </span>
               <span
                 style={{
@@ -422,12 +504,14 @@ function NewsSentimentWidget() {
                   style={{
                     fontSize: "0.78rem",
                     color: "#ef4444",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
+                    lineHeight: "1.3",
                   }}
                 >
-                  <span>⚠️</span> {hoverError}
+                  {hoverError.includes("quota") || hoverError.includes("429")
+                    ? "Daily limit reached. Try again later."
+                    : hoverError.length > 60
+                      ? hoverError.substring(0, 57) + "..."
+                      : hoverError}
                 </div>
               )}
 
@@ -441,18 +525,18 @@ function NewsSentimentWidget() {
                   }}
                 >
                   {hoveredAnalysis.analysis?.sentiment_analysis && (
-                    <p
+                    <div
                       style={{
                         fontSize: "0.84rem",
                         color: theme.text,
                         lineHeight: "1.65",
                         margin: 0,
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
                       }}
                     >
-                      {hoveredAnalysis.analysis.sentiment_analysis}
-                    </p>
+                      {formatPrediction(
+                        hoveredAnalysis.analysis.sentiment_analysis,
+                      )}
+                    </div>
                   )}
 
                   {/* Tracked stocks */}
@@ -526,28 +610,7 @@ function NewsSentimentWidget() {
 
   return (
     <div style={{ marginBottom: "2rem" }}>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h2
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "700",
-            color: theme.text,
-            marginBottom: "0.5rem",
-            fontFamily: "'Roboto Mono', monospace",
-          }}
-        >
-          📰 Breaking News
-        </h2>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: theme.textSecondary,
-            margin: 0,
-          }}
-        >
-          Latest market news — hover any card for AI sentiment analysis
-        </p>
-      </div>
+      <div style={{ marginBottom: "1.5rem" }}></div>
 
       {loading && (
         <div
@@ -639,7 +702,6 @@ function NewsSentimentWidget() {
                     position: "relative",
                   }}
                 >
-
                   {/* Card content */}
                   <div
                     style={{

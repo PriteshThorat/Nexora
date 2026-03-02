@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { cacheSentiment } from "../store/sentimentCacheSlice";
+import {
+  setCachedSentimentAnalysis,
+  setCachedNewsSentiment,
+} from "../store/aiAnalysisSlice";
+import { useInFlightRequests } from "../hooks/useInFlightRequests";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -11,8 +15,15 @@ const DEFAULT_STOCKS = ["AAPL", "MSFT", "GOOGL", "TSLA", "AMZN"];
 
 function SentimentNewsHeading() {
   const darkMode = useSelector((state) => state.theme.darkMode);
-  const sentimentCache = useSelector((state) => state.sentimentCache.cache);
+  const sentimentAnalysisCache = useSelector(
+    (state) => state.aiAnalysis.sentimentAnalysis,
+  );
+  const newsSentimentCache = useSelector(
+    (state) => state.aiAnalysis.newsSentiment,
+  );
+  const cacheExpiry = useSelector((state) => state.aiAnalysis.cacheExpiry);
   const dispatch = useDispatch();
+  const { makeCachedRequest } = useInFlightRequests();
   const [headlines, setHeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [watchedStocks, setWatchedStocks] = useState([]);
@@ -95,16 +106,36 @@ function SentimentNewsHeading() {
         );
         const stocksToFetch = [...watchedStocks, ...defaults].slice(0, 6);
 
-        const newsPromises = stocksToFetch.map((ticker) =>
-          fetch(
-            `${API_BASE_URL.replace(/\/$/, "")}/api/news-sentiment/?ticker=${encodeURIComponent(ticker)}&output_format=full`,
-            {
-              headers: { Authorization: `Token ${token}` },
-            },
-          )
-            .then((res) => res.json())
-            .catch(() => null),
-        );
+        const newsPromises = stocksToFetch.map((ticker) => {
+          // Check if news is cached for this ticker
+          const cached = (newsSentimentCache || {})[ticker];
+          if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+            return Promise.resolve(cached.data);
+          }
+
+          // Fetch if not cached
+          return makeCachedRequest(`news-${ticker}`, async () => {
+            const res = await fetch(
+              `${API_BASE_URL.replace(/\/$/, "")}/api/news-sentiment/?ticker=${encodeURIComponent(ticker)}&output_format=full`,
+              {
+                headers: { Authorization: `Token ${token}` },
+              },
+            );
+            if (!res.ok) {
+              throw new Error(`News API failed: ${res.status}`);
+            }
+            const result = await res.json();
+            if (!result) {
+              throw new Error("Empty response from news API");
+            }
+            // Store in cache
+            dispatch(setCachedNewsSentiment({ ticker, data: result }));
+            return result;
+          }).catch((err) => {
+            console.warn(`Failed to fetch news for ${ticker}:`, err);
+            return null;
+          });
+        });
 
         const results = await Promise.all(newsPromises);
 
@@ -140,6 +171,16 @@ function SentimentNewsHeading() {
   }, [watchedStocks]);
 
   // --- Hover handlers ---
+  const hashHeadline = (text) => {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  };
+
   const cancelHideTimeout = () => {
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
@@ -155,9 +196,12 @@ function SentimentNewsHeading() {
     setItemRect(e.currentTarget.getBoundingClientRect());
     setHoverError(null);
 
-    const cacheKey = headline.title;
-    if (sentimentCache[cacheKey]) {
-      setHoveredAnalysis(sentimentCache[cacheKey]);
+    const headlineHash = hashHeadline(headline.title);
+    const cached = sentimentAnalysisCache[headlineHash];
+
+    // Check if cached and not expired
+    if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+      setHoveredAnalysis(cached.data);
       setLoadingHover(false);
       return;
     }
@@ -166,34 +210,41 @@ function SentimentNewsHeading() {
     setLoadingHover(true);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setHoverError("Not authenticated");
-        setLoadingHover(false);
-        return;
-      }
+      const data = await makeCachedRequest(
+        `sentiment-${headlineHash}`,
+        async () => {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Not authenticated");
+          }
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/agents/sentiment_analysis/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ news_text: headline.title }),
+          const res = await fetch(
+            `${API_BASE_URL}/api/agents/sentiment_analysis/`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Token ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ news_text: headline.title }),
+            },
+          );
+
+          if (res.ok) {
+            const result = await res.json();
+            dispatch(
+              setCachedSentimentAnalysis({ headlineHash, data: result }),
+            );
+            return result;
+          } else {
+            throw new Error("Analysis unavailable");
+          }
         },
       );
 
       if (activeHoverRef.current !== key) return;
 
-      if (res.ok) {
-        const data = await res.json();
-        dispatch(cacheSentiment({ key: headline.title, data }));
-        setHoveredAnalysis(data);
-      } else {
-        setHoverError("Analysis unavailable");
-      }
+      setHoveredAnalysis(data);
     } catch (err) {
       if (activeHoverRef.current === key) setHoverError(err.message || "Error");
     } finally {
@@ -327,7 +378,7 @@ function SentimentNewsHeading() {
         onMouseLeave={handleTooltipLeave}
         style={{
           position: "fixed",
-          bottom: `${window.innerHeight - itemRect.top + 14}px`,
+          top: `${itemRect.bottom + 14}px`,
           left: `${leftOffset}px`,
           right: `${pad}px`,
           zIndex: 9999,
@@ -335,6 +386,32 @@ function SentimentNewsHeading() {
           animation: "snh-bubble-in 0.22s cubic-bezier(0.16,1,0.3,1) both",
         }}
       >
+        {/* Tail arrow - UP pointing */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-11px",
+            left: `${tailLeftPx}px`,
+            width: 0,
+            height: 0,
+            borderLeft: "10px solid transparent",
+            borderRight: "10px solid transparent",
+            borderBottom: `11px solid ${darkMode ? "rgba(99,102,241,0.28)" : "rgba(99,102,241,0.18)"}`,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "-9px",
+            left: `${tailLeftPx + 1}px`,
+            width: 0,
+            height: 0,
+            borderLeft: "9px solid transparent",
+            borderRight: "9px solid transparent",
+            borderBottom: `9px solid ${bg}`,
+          }}
+        />
+
         {/* Bubble body */}
         <div
           style={{
@@ -370,7 +447,7 @@ function SentimentNewsHeading() {
                 fontFamily: "'Roboto Mono', monospace",
               }}
             >
-              📊 AI Sentiment
+              AI Sentiment
             </span>
           </div>
 
@@ -498,32 +575,6 @@ function SentimentNewsHeading() {
             )}
           </div>
         </div>
-
-        {/* Tail arrow */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-11px",
-            left: `${tailLeftPx}px`,
-            width: 0,
-            height: 0,
-            borderLeft: "10px solid transparent",
-            borderRight: "10px solid transparent",
-            borderTop: `11px solid ${darkMode ? "rgba(99,102,241,0.28)" : "rgba(99,102,241,0.18)"}`,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-9px",
-            left: `${tailLeftPx + 1}px`,
-            width: 0,
-            height: 0,
-            borderLeft: "9px solid transparent",
-            borderRight: "9px solid transparent",
-            borderTop: `9px solid ${bg}`,
-          }}
-        />
       </div>
     );
   };

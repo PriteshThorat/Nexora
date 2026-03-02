@@ -1,14 +1,35 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useFormatAIResponse } from "../hooks/useFormatAIResponse";
+import { useInFlightRequests } from "../hooks/useInFlightRequests";
+import { setCachedSentimentAnalysis } from "../store/aiAnalysisSlice";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 function SentimentAnalysisModal({ headline, isOpen, onClose }) {
   const darkMode = useSelector((state) => state.theme.darkMode);
+  const dispatch = useDispatch();
+  const sentimentAnalysisCache = useSelector(
+    (state) => state.aiAnalysis.sentimentAnalysis,
+  );
+  const cacheExpiry = useSelector((state) => state.aiAnalysis.cacheExpiry);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
+  const { formatPrediction, theme: aiTheme } = useFormatAIResponse();
+  const { makeCachedRequest } = useInFlightRequests();
+
+  // Helper function to create a hash of the headline
+  const hashHeadline = (text) => {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+  };
 
   // Theme colors
   const theme = {
@@ -24,7 +45,16 @@ function SentimentAnalysisModal({ headline, isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen && headline) {
-      fetchSentimentAnalysis();
+      const headlineHash = hashHeadline(headline);
+      // Check if analysis is cached and not expired
+      const cached = sentimentAnalysisCache[headlineHash];
+      if (cached && Date.now() - cached.timestamp < cacheExpiry) {
+        setAnalysis(cached.data);
+        setError(null);
+        setLoading(false);
+      } else {
+        fetchSentimentAnalysis();
+      }
     }
   }, [isOpen, headline]);
 
@@ -33,32 +63,44 @@ function SentimentAnalysisModal({ headline, isOpen, onClose }) {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication required");
-        return;
-      }
+      const headlineHash = hashHeadline(headline);
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/agents/sentiment_analysis/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            news_text: headline,
-          }),
+      const data = await makeCachedRequest(
+        `sentiment-${headlineHash}`,
+        async () => {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            throw new Error("Authentication required");
+          }
+
+          const response = await fetch(
+            `${API_BASE_URL}/api/agents/sentiment_analysis/`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Token ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                news_text: headline,
+              }),
+            },
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            // Store in Redux cache
+            dispatch(
+              setCachedSentimentAnalysis({ headlineHash, data: result }),
+            );
+            return result;
+          } else {
+            throw new Error("Failed to fetch sentiment analysis");
+          }
         },
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnalysis(data);
-      } else {
-        setError("Failed to fetch sentiment analysis");
-      }
+      setAnalysis(data);
     } catch (err) {
       console.error("Error:", err);
       setError(err.message || "An error occurred");
@@ -261,11 +303,9 @@ function SentimentAnalysisModal({ headline, isOpen, onClose }) {
                       fontSize: "0.95rem",
                       lineHeight: "1.6",
                       color: theme.text,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
                     }}
                   >
-                    {analysis.analysis.sentiment_analysis}
+                    {formatPrediction(analysis.analysis.sentiment_analysis)}
                   </div>
                 </div>
               )}
